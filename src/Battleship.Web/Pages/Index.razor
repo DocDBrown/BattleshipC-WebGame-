@@ -1,0 +1,92 @@
+@page "/"
+@inject NavigationManager Navigation
+
+<PageTitle>Battleship</PageTitle>
+
+<section class="hero">
+    <p class="eyebrow">Web Battleship</p>
+    <h1>Sink the fleet. Keep your waters secret.</h1>
+    <p class="lede">
+        Play a local game against an AI that only knows what it has hit, or open a room
+        and trade shots with a friend over a WebSocket relay.
+    </p>
+</section>
+
+<div class="menu-grid">
+    <button class="menu-card" type="button" @onclick="GoSingle">
+        <span class="menu-icon" aria-hidden="true">◎</span>
+        <span class="menu-title">Single player</span>
+        <span class="menu-copy">Pick easy, medium, or hard, then place your fleet.</span>
+    </button>
+    <button class="menu-card" type="button" @onclick="GoHost">
+        <span class="menu-icon" aria-hidden="true">⌁</span>
+        <span class="menu-title">Host a game</span>
+        <span class="menu-copy">Create a room code and share the join link.</span>
+    </button>
+    <button class="menu-card" type="button" @onclick="GoHelp">
+        <span class="menu-icon" aria-hidden="true">?</span>
+        <span class="menu-title">How to play</span>
+        <span class="menu-copy">Rules, controls, and multiplayer instructions.</span>
+    </button>
+</div>
+
+<section class="panel join-panel">
+    <h2>Join a game</h2>
+    <p class="subtle">Enter the six-character room code your opponent shared.</p>
+    <form class="join-form" @onsubmit="Join" @onsubmit:preventDefault>
+        <label class="sr-only" for="room-code">Room code</label>
+        <input id="room-code"
+               class="code-input"
+               inputmode="text"
+               autocomplete="off"
+               autocapitalize="characters"
+               spellcheck="false"
+               maxlength="6"
+               placeholder="ABC234"
+               @bind="RoomCodeInput"
+               @bind:event="oninput" />
+        <button class="btn primary" type="submit" disabled="@(!IsCodeValid)">Join</button>
+    </form>
+    @if (_error is not null)
+    {
+        <p class="error-text" role="alert">@_error</p>
+    }
+</section>
+
+@code {
+    private string _roomCode = string.Empty;
+    private string? _error;
+
+    private string RoomCodeInput
+    {
+        get => _roomCode;
+        set
+        {
+            var upper = (value ?? string.Empty).ToUpperInvariant();
+            _roomCode = new string(upper.Where(ProtocolInfo.RoomCodeAlphabet.Contains).Take(6).ToArray());
+            if (_error is not null && IsCodeValid)
+            {
+                _error = null;
+            }
+        }
+    }
+
+    private bool IsCodeValid => ProtocolInfo.IsValidRoomCode(_roomCode);
+
+    private void GoSingle() => Navigation.NavigateTo("/single");
+
+    private void GoHost() => Navigation.NavigateTo("/host");
+
+    private void GoHelp() => Navigation.NavigateTo("/help");
+
+    private void Join()
+    {
+        if (!IsCodeValid)
+        {
+            _error = "A room code is exactly 6 characters from A-H, J-N, P-Z and 2-9.";
+            return;
+        }
+
+        Navigation.NavigateTo($"/join/{_roomCode}");
+    }
+}

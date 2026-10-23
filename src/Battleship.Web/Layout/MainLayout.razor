@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <header class="app-header">
+        <NavLink class="brand" href="/" Match="NavLinkMatch.All">
+            <span class="brand-mark" aria-hidden="true">⚓</span>
+            <span>Battleship</span>
+        </NavLink>
+        <nav class="app-nav" aria-label="Primary">
+            <NavLink href="/single">Single player</NavLink>
+            <NavLink href="/host">Host</NavLink>
+            <NavLink href="/help">Help</NavLink>
+        </nav>
+    </header>
+    <main class="app-main">
+        @Body
+    </main>
+    <footer class="app-footer">
+        <span>Local AI in your browser · Two-player rooms over WebSockets</span>
+    </footer>
+</div>

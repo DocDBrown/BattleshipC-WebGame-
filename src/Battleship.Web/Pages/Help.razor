@@ -1,0 +1,64 @@
+@page "/help"
+@inject NavigationManager Navigation
+
+<PageTitle>How to play</PageTitle>
+
+<section class="page help-page">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">Field manual</p>
+            <h1>How to play</h1>
+        </div>
+        <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+    </header>
+
+    <div class="help-grid">
+        <article class="panel">
+            <h2>Rules</h2>
+            <ul>
+                <li>Each side has a 10×10 board and five ships.</li>
+                <li>The fleet is Carrier (5), Battleship (4), Cruiser (3), Submarine (3), and Patrol Boat (2).</li>
+                <li>Ships may not overlap or extend outside the board.</li>
+                <li>Players alternate turns. A miss, hit, or sunk ship passes the turn.</li>
+                <li>Repeated or invalid shots are rejected and do not use a turn.</li>
+                <li>The first fleet to lose all five ships loses the game.</li>
+            </ul>
+        </article>
+
+        <article class="panel">
+            <h2>Controls</h2>
+            <ul>
+                <li><strong>Mouse:</strong> click a cell to place a ship or fire.</li>
+                <li><strong>Touch:</strong> tap a cell or a ship card.</li>
+                <li><strong>Drag:</strong> drag a ship card onto the placement board.</li>
+                <li><strong>Keyboard:</strong> arrow keys move the cursor, <kbd>R</kbd> rotates, and <kbd>Enter</kbd> or <kbd>Space</kbd> activates the focused cell.</li>
+            </ul>
+        </article>
+
+        <article class="panel">
+            <h2>Difficulty</h2>
+            <ul>
+                <li><strong>Easy</strong> chooses uniformly at random among untried cells.</li>
+                <li><strong>Medium</strong> hunts randomly, then targets cells adjacent to unresolved hits and extends along aligned hits.</li>
+                <li><strong>Hard</strong> enumerates legal placements for the remaining fleet, weights those covering unresolved hits, and fires at the highest-scoring untried cell.</li>
+            </ul>
+            <p class="subtle">Every difficulty places its ships automatically. The AI never sees your hidden ship positions.</p>
+        </article>
+
+        <article class="panel">
+            <h2>Multiplayer</h2>
+            <ol>
+                <li>Open <strong>Host</strong> and wait for a room code.</li>
+                <li>Share the join link or read the six-character code to your opponent.</li>
+                <li>Your opponent opens <strong>Join</strong>, enters the code, and connects.</li>
+                <li>Place your fleets, press <strong>Ready</strong>, and the host fires first.</li>
+                <li>Use the chat box at any time; chatting never changes whose turn it is.</li>
+            </ol>
+            <p class="subtle">Your unhit ship positions stay in your browser and are never sent to the server or your opponent.</p>
+        </article>
+    </div>
+</section>
+
+@code {
+    private void GoMenu() => Navigation.NavigateTo("/");
+}

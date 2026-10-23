@@ -1,0 +1,179 @@
+<div class="placement">
+    <div class="placement-toolbar">
+        <div class="segmented" role="group" aria-label="Placement mode">
+            <button type="button"
+                    class="@(Mode == PlacementMode.Manual ? "active" : string.Empty)"
+                    @onclick="() => Mode = PlacementMode.Manual">
+                Manual
+            </button>
+            <button type="button"
+                    class="@(Mode == PlacementMode.Automatic ? "active" : string.Empty)"
+                    @onclick="() => Mode = PlacementMode.Automatic">
+                Automatic
+            </button>
+        </div>
+
+        @if (Mode == PlacementMode.Manual)
+        {
+            <button type="button" class="btn ghost" @onclick="Rotate">
+                Rotate: @(Horizontal ? "Horizontal" : "Vertical")
+            </button>
+            <button type="button" class="btn ghost" @onclick="Reset">Reset</button>
+        }
+        else
+        {
+            <button type="button" class="btn ghost" @onclick="AutoPlace">Place all ships automatically</button>
+            <button type="button" class="btn ghost" @onclick="Reset">Reset</button>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <p class="notice" role="status">@Message</p>
+    }
+
+    <div class="placement-grid">
+        <BoardGrid Cells="@BoardView.Placement(Board)"
+                   Interactive="true"
+                   Label="Fleet placement board"
+                   OnActivate="PlaceAt"
+                   OnRotate="RotateAsync"
+                   OnDrop="DropAt" />
+
+        <div class="fleet-cards" aria-label="Ships to place">
+            @foreach (var ship in Fleet.Ships)
+            {
+                var placed = Board.IsPlaced(ship.Kind);
+                var canDrag = Mode == PlacementMode.Manual && !placed;
+                <div class="ship-card @(placed ? "placed" : string.Empty)"
+                     draggable="@(canDrag ? "true" : "false")"
+                     data-ship="@ship.Kind"
+                     @ondragstart="() => OnDragStart(ship.Kind)">
+                    <span class="ship-name">@ship.Name</span>
+                    <span class="ship-size" aria-hidden="true">@(new string('■', ship.Size))</span>
+                    <span class="ship-state">@(placed ? "Placed" : "Awaiting placement")</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private enum PlacementMode
+    {
+        Manual,
+        Automatic
+    }
+
+    private readonly Random _random = new();
+    private PlacementMode _mode = PlacementMode.Manual;
+    private ShipKind? _draggedKind;
+
+    [Parameter, EditorRequired] public Board Board { get; set; } = null!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private PlacementMode Mode
+    {
+        get => _mode;
+        set
+        {
+            _mode = value;
+            Message = null;
+        }
+    }
+
+    private bool Horizontal { get; set; } = true;
+    private string? Message { get; set; }
+    private ShipKind? DraggedKind => _draggedKind;
+
+    private void OnDragStart(ShipKind kind) => _draggedKind = kind;
+
+    private async Task PlaceAt(Coordinate coordinate)
+    {
+        if (Mode != PlacementMode.Manual)
+        {
+            Message = "Switch to Manual placement to place ships by hand.";
+            return;
+        }
+
+        var next = Fleet.Ships.FirstOrDefault(s => !Board.IsPlaced(s.Kind));
+        if (next is null)
+        {
+            Message = "All five ships are placed. Start the battle when you are ready.";
+            return;
+        }
+
+        if (Board.TryPlace(next.Kind, coordinate, Horizontal))
+        {
+            Message = $"{next.Name} placed at {coordinate.Label}.";
+            await NotifyAsync();
+        }
+        else
+        {
+            Message = "That placement is outside the board or overlaps another ship.";
+        }
+    }
+
+    private async Task DropAt(Coordinate coordinate)
+    {
+        if (_draggedKind is not ShipKind kind)
+        {
+            return;
+        }
+
+        if (Mode != PlacementMode.Manual)
+        {
+            Message = "Switch to Manual placement to drag ships.";
+            return;
+        }
+
+        if (Board.IsPlaced(kind))
+        {
+            Message = $"{Fleet.NameOf(kind)} is already placed.";
+        }
+        else if (Board.TryPlace(kind, coordinate, Horizontal))
+        {
+            Message = $"{Fleet.NameOf(kind)} dropped at {coordinate.Label}.";
+            await NotifyAsync();
+        }
+        else
+        {
+            Message = "That placement is outside the board or overlaps another ship.";
+        }
+
+        _draggedKind = null;
+    }
+
+    private async Task AutoPlace()
+    {
+        Message = Board.TryAutoPlaceAll(_random)
+            ? "Fleet placed automatically."
+            : "Automatic placement failed; try again or place the ships manually.";
+        await NotifyAsync();
+    }
+
+    private async Task Reset()
+    {
+        Board.Clear();
+        Message = "Fleet cleared.";
+        await NotifyAsync();
+    }
+
+    private async Task RotateAsync()
+    {
+        Rotate();
+        await Task.CompletedTask;
+    }
+
+    private void Rotate()
+    {
+        Horizontal = !Horizontal;
+        Message = $"Orientation: {(Horizontal ? "horizontal" : "vertical")}.";
+    }
+
+    private async Task NotifyAsync()
+    {
+        await OnChanged.InvokeAsync();
+        StateHasChanged();
+    }
+}

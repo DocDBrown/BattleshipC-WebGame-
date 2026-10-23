@@ -1,0 +1,1215 @@
+@implements IAsyncDisposable
+@using System.Net.WebSockets
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+@inject RoomApiClient Rooms
+@inject WsTransport Ws
+@inject IJSRuntime JS
+
+<section class="page">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">Multiplayer</p>
+            <h1>@(IsHost ? "Host a game" : "Join a game")</h1>
+            @if (_roomCode is not null && _phase != MultiplayerPhase.Connecting)
+            {
+                <p class="subtle">
+                    Room <span class="room-code">@_roomCode</span>
+                    <span class="version-tag">protocol v@(ProtocolInfo.Version)</span>
+                </p>
+            }
+        </div>
+        <div class="header-actions">
+            @if (_joinLink is not null && _phase != MultiplayerPhase.Connecting)
+            {
+                <button class="btn ghost" type="button" @onclick="CopyLinkAsync">Copy join link</button>
+            }
+            <button class="btn ghost" type="button" @onclick="QuitAsync">Menu</button>
+        </div>
+    </header>
+
+    @if (_phase == MultiplayerPhase.Error)
+    {
+        <div class="panel error" role="alert">
+            <h2>@(_errorCode ?? "ERROR")</h2>
+            <p>@_errorDetail</p>
+            <div class="actions">
+                <button class="btn primary" type="button" @onclick="GoMenu">Return to menu</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="status-row">
+            <span class="badge">@PhaseText</span>
+            @if (!string.IsNullOrEmpty(_notice))
+            {
+                <span class="notice" role="status">@_notice</span>
+            }
+        </div>
+
+        @if (_joinLink is not null && _phase is MultiplayerPhase.WaitingForPeer or MultiplayerPhase.Placement or MultiplayerPhase.WaitingForReady)
+        {
+            <div class="panel join-link-panel">
+                <label for="join-link">Share this link</label>
+                <input id="join-link" class="join-link" readonly value="@_joinLink" />
+                <p class="subtle">Or share the room code <strong>@_roomCode</strong>.</p>
+            </div>
+        }
+
+        @if (_phase == MultiplayerPhase.WaitingForPeer && !IsHost)
+        {
+            <div class="panel waiting-panel">
+                <p>Connecting to the host…</p>
+            </div>
+        }
+
+        @if (_phase == MultiplayerPhase.Placement)
+        {
+            <div class="panel">
+                <h2>Place your fleet</h2>
+                <p class="subtle">
+                    Your fleet stays private in this browser. Drag a ship card, click or tap a cell,
+                    or use the arrow keys with <kbd>R</kbd> to rotate.
+                </p>
+                <PlacementPanel @key="_placementKey"
+                                Board="_session.OwnBoard"
+                                OnChanged="OnPlacementChanged" />
+                @if (_session.PeerReady)
+                {
+                    <p class="notice">Your opponent is ready.</p>
+                }
+                <div class="actions">
+                    <button class="btn primary"
+                            type="button"
+                            disabled="@(!_session.OwnBoard.AllShipsPlaced || _session.ReadySent)"
+                            @onclick="ReadyAsync">
+                        Ready
+                    </button>
+                </div>
+            </div>
+        }
+        else if (_phase == MultiplayerPhase.WaitingForReady)
+        {
+            <div class="panel">
+                <h2>Fleet locked in</h2>
+                <p class="subtle">Your ships cannot be moved after READY. Waiting for your opponent…</p>
+                <BoardGrid Cells="@BoardView.Own(_session.OwnBoard)"
+                           Interactive="false"
+                           Label="Your locked board" />
+            </div>
+        }
+
+        @if (_phase is MultiplayerPhase.Combat or MultiplayerPhase.GameOver)
+        {
+            <div class="boards">
+                <div class="board-panel">
+                    <h2>Your waters</h2>
+                    <BoardGrid Cells="@BoardView.Own(_session.OwnBoard)"
+                               Interactive="false"
+                               Label="Your board" />
+                    <FleetStatus Ships="_session.OwnBoard.Ships" Title="Your fleet" />
+                </div>
+                <div class="board-panel">
+                    <h2>Enemy waters</h2>
+                    <BoardGrid Cells="@BoardView.Target(_session.Target)"
+                               Interactive="@(_phase == MultiplayerPhase.Combat && _session.Turn == Side.Self && _session.PendingSeq is null)"
+                               Label="Enemy targeting board"
+                               OnActivate="FireAsync" />
+                    <FleetStatus Ships="Array.Empty<Ship>()"
+                                 SunkKinds="_session.EnemySunk"
+                                 Title="Enemy fleet" />
+                </div>
+            </div>
+
+            <div class="status-row">
+                <span class="badge">@TurnText</span>
+                @if (!string.IsNullOrEmpty(_lastOutcome))
+                {
+                    <span class="notice" role="status">@_lastOutcome</span>
+                }
+            </div>
+        }
+
+        @if (_session.HandshakeComplete)
+        {
+            <ChatPanel Entries="_session.Chat"
+                       Disabled="@(_phase is MultiplayerPhase.Error or MultiplayerPhase.Connecting or MultiplayerPhase.GameOver)"
+                       OnSend="SendChatAsync" />
+        }
+
+        @if (_phase == MultiplayerPhase.GameOver)
+        {
+            <div class="panel game-over" role="status">
+                <p class="eyebrow">Game over</p>
+                <h2>@WinnerTitle</h2>
+                <p>@ResultText</p>
+                <div class="actions">
+                    <button class="btn primary" type="button" @onclick="GoMenu">Return to menu</button>
+                </div>
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private readonly ProtocolCodec _codec = new();
+    private readonly ShotResolver _resolver = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private readonly TaskCompletionSource<bool> _handshake =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private GameOptions _options = new();
+    private MultiplayerSession _session = new();
+    private MultiplayerPhase _phase = MultiplayerPhase.Connecting;
+    private string? _roomCode;
+    private string? _joinLink;
+    private string? _errorCode;
+    private string? _errorDetail;
+    private string? _notice;
+    private string? _lastOutcome;
+    private Task? _receiveTask;
+    private bool _closing;
+    private bool _disposed;
+    private int _placementKey;
+    private int _peerTurnWatchVersion;
+
+    [Parameter] public bool IsHost { get; set; }
+    [Parameter] public string? RoomCode { get; set; }
+
+    private string PhaseText => _phase switch
+    {
+        MultiplayerPhase.Connecting => IsHost ? "Creating room…" : "Checking room…",
+        MultiplayerPhase.WaitingForPeer => IsHost ? "Waiting for an opponent…" : "Waiting for the host…",
+        MultiplayerPhase.Placement => "Place your fleet",
+        MultiplayerPhase.WaitingForReady => "Waiting for your opponent to be ready",
+        MultiplayerPhase.Combat => _session.Turn == Side.Self ? "Your turn" : "Opponent's turn",
+        MultiplayerPhase.GameOver => "Game over",
+        MultiplayerPhase.Error => _errorCode ?? "Error",
+        _ => string.Empty
+    };
+
+    private string TurnText => _phase == MultiplayerPhase.GameOver
+        ? "Game over"
+        : _session.PendingSeq is not null
+            ? "Waiting for the result…"
+            : _session.Turn == Side.Self
+                ? "Your turn — choose a target"
+                : "Opponent's turn";
+
+    private string WinnerTitle => _session.Winner switch
+    {
+        Side.Self => "You win!",
+        Side.Peer => "You lose.",
+        _ => "Game over"
+    };
+
+    private string ResultText => _session.EndReason switch
+    {
+        "peer_left" => "Your opponent left the room.",
+        "peer_quit" => _session.Winner == Side.Self
+            ? "Your opponent finished the game."
+            : "The game has finished.",
+        "connection_lost" => "The connection was lost.",
+        "fleet_sunk" => _session.Winner == Side.Self
+            ? "The enemy fleet was destroyed."
+            : "Your fleet was destroyed.",
+        _ => "The game has finished."
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _options = GameOptions.FromConfiguration(Configuration);
+        _session = new MultiplayerSession { Role = IsHost ? "host" : "client" };
+
+        try
+        {
+            if (IsHost)
+            {
+                await StartHostAsync();
+            }
+            else
+            {
+                await StartClientAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page is leaving.
+        }
+        catch (Exception ex)
+        {
+            SetError("INTERNAL", ex.Message);
+        }
+    }
+
+    private async Task StartHostAsync()
+    {
+        _phase = MultiplayerPhase.Connecting;
+        var created = await WithTimeoutAsync(
+            _options.HttpTimeoutSeconds,
+            token => Rooms.CreateRoomAsync(token));
+
+        if (!created.Success)
+        {
+            var errorCode = created.ErrorCode == "CONFLICT" ? "UPSTREAM_UNAVAILABLE" : created.ErrorCode ?? "UPSTREAM_UNAVAILABLE";
+            SetError(errorCode, created.Detail ?? "The room could not be created.");
+            return;
+        }
+
+        _roomCode = created.Value;
+        _session.RoomCode = _roomCode;
+        _joinLink = BuildJoinLink(_roomCode!);
+        AppLogger.Log("room_created", _roomCode);
+
+        await OpenSocketAsync("host");
+        if (_phase == MultiplayerPhase.Error)
+        {
+            return;
+        }
+
+        _phase = MultiplayerPhase.WaitingForPeer;
+        StateHasChanged();
+
+        if (!await WaitForHandshakeAsync(TimeSpan.FromSeconds(_options.JoinTimeoutSeconds)))
+        {
+            if (_phase == MultiplayerPhase.Error)
+            {
+                return;
+            }
+
+            SetError("INTERNAL", "Timed out waiting for an opponent to join.");
+            await CloseAsync(1011);
+            return;
+        }
+
+        _phase = MultiplayerPhase.Placement;
+        _placementKey++;
+        StateHasChanged();
+    }
+
+    private async Task StartClientAsync()
+    {
+        _phase = MultiplayerPhase.Connecting;
+        var code = (RoomCode ?? string.Empty).Trim().ToUpperInvariant();
+        if (!ProtocolInfo.IsValidRoomCode(code))
+        {
+            SetError("VALIDATION_FAILED", "The room code is not valid. Use six characters from A-H, J-N, P-Z and 2-9.");
+            return;
+        }
+
+        _roomCode = code;
+        _session.RoomCode = code;
+
+        var room = await LookupRoomAsync(code);
+        if (!room.Success)
+        {
+            SetError(room.ErrorCode ?? "NOT_FOUND", room.Detail ?? "The room could not be found.");
+            return;
+        }
+
+        await OpenSocketAsync("client");
+        if (_phase == MultiplayerPhase.Error)
+        {
+            return;
+        }
+
+        _phase = MultiplayerPhase.WaitingForPeer;
+        StateHasChanged();
+
+        if (!await WaitForHandshakeAsync(TimeSpan.FromSeconds(_options.HandshakeTimeoutSeconds)))
+        {
+            if (_phase == MultiplayerPhase.Error)
+            {
+                return;
+            }
+
+            SetError("INTERNAL", "The host did not complete the handshake in time.");
+            await CloseAsync(1011);
+            return;
+        }
+
+        _phase = MultiplayerPhase.Placement;
+        _placementKey++;
+        StateHasChanged();
+    }
+
+    private async Task<ApiResult<int>> LookupRoomAsync(string code)
+    {
+        ApiResult<int> last = ApiResult<int>.Fail("NOT_FOUND", "The room does not exist.");
+        for (var attempt = 0; attempt <= _options.JoinRetryCount; attempt++)
+        {
+            last = await WithTimeoutAsync(_options.HttpTimeoutSeconds, token => Rooms.GetRoomAsync(code, token));
+            if (last.Success)
+            {
+                if (last.Value == 2)
+                {
+                    return ApiResult<int>.Fail("CONFLICT", "That room is already full.");
+                }
+
+                if (last.Value == 1)
+                {
+                    return last;
+                }
+            }
+            else
+            {
+                return last;
+            }
+
+            if (attempt < _options.JoinRetryCount && _options.JoinRetryDelayMs > 0)
+            {
+                try
+                {
+                    await Task.Delay(_options.JoinRetryDelayMs, _lifetime.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }
+
+        return ApiResult<int>.Fail("NOT_FOUND", "The host has not joined that room yet.");
+    }
+
+    private async Task OpenSocketAsync(string role)
+    {
+        var baseUri = new Uri(Navigation.BaseUri);
+        var scheme = baseUri.Scheme == Uri.UriSchemeHttps ? "wss" : "ws";
+        var uri = new Uri($"{scheme}://{baseUri.Authority}/ws/rooms/{_roomCode}?role={role}");
+
+        try
+        {
+            await Ws.ConnectAsync(uri, TimeSpan.FromSeconds(_options.HttpTimeoutSeconds), _lifetime.Token);
+        }
+        catch (Exception)
+        {
+            if (!_disposed)
+            {
+                SetError("UPSTREAM_UNAVAILABLE", "Could not open the game connection.");
+            }
+
+            return;
+        }
+
+        _receiveTask = ReceiveLoopAsync();
+
+        if (role == "client")
+        {
+            try
+            {
+                await SendAsync(ProtocolMessage.Hello());
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                SetError("INTERNAL", "Could not send the handshake.");
+                await CloseAsync(1011);
+            }
+        }
+    }
+
+    private async Task ReceiveLoopAsync()
+    {
+        try
+        {
+            while (!_disposed && !_lifetime.IsCancellationRequested)
+            {
+                var frame = await Ws.ReceiveAsync(_lifetime.Token);
+                if (frame.Kind == WsFrameKind.Close)
+                {
+                    await CloseAsync(1000);
+                    OnSocketClosed(frame);
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                if (frame.Kind is WsFrameKind.Binary or WsFrameKind.TooLarge)
+                {
+                    await CloseAsync(frame.Kind == WsFrameKind.Binary ? 1003 : 1009);
+                    OnSocketClosed(frame);
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                if (!_codec.TryDeserialize(frame.Text ?? string.Empty, out var message, out var error) || message is null)
+                {
+                    await SendErrorAsync(ProtocolErrorCode.VALIDATION, error);
+                    SetError("VALIDATION_FAILED", $"The server sent an invalid protocol message: {error}");
+                    await CloseAsync(1002);
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                if (message.V != ProtocolInfo.Version)
+                {
+                    await SendErrorAsync(
+                        ProtocolErrorCode.VERSION_MISMATCH,
+                        "Protocol version mismatch. Reload the page.");
+                    SetError("VALIDATION_FAILED", "This page is out of date. Reload to get the latest version.");
+                    await CloseAsync(1002);
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                await DispatchAsync(message);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Page left or socket closed.
+        }
+        catch (Exception ex) when (!_closing && !_disposed)
+        {
+            if (ex is WebSocketException)
+            {
+                OnSocketClosed(WsFrame.Close(null, null));
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            SetError("INTERNAL", ex.Message);
+            await CloseAsync(1011);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DispatchAsync(ProtocolMessage message)
+    {
+        switch (message.Type)
+        {
+            case MessageType.HELLO:
+                await OnHelloAsync();
+                break;
+            case MessageType.READY:
+                await OnReadyAsync();
+                break;
+            case MessageType.SHOT:
+                await OnShotAsync(message);
+                break;
+            case MessageType.RESULT:
+                await OnResultAsync(message);
+                break;
+            case MessageType.CHAT:
+                await OnChatAsync(message);
+                break;
+            case MessageType.QUIT:
+                await OnQuitAsync();
+                break;
+            case MessageType.ERROR:
+                await OnErrorAsync(message);
+                break;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnHelloAsync()
+    {
+        if (_session.HandshakeComplete)
+        {
+            return;
+        }
+
+        if (IsHost)
+        {
+            try
+            {
+                await SendAsync(ProtocolMessage.Hello());
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                SetError("INTERNAL", "Could not answer the handshake.");
+                return;
+            }
+        }
+
+        _session.HandshakeComplete = true;
+        _handshake.TrySetResult(true);
+        if (_phase != MultiplayerPhase.Error)
+        {
+            _phase = MultiplayerPhase.Placement;
+        }
+
+        AppLogger.Log("peer_connected");
+    }
+
+    private async Task OnReadyAsync()
+    {
+        if (!_session.HandshakeComplete)
+        {
+            await SendErrorAsync(ProtocolErrorCode.VALIDATION, "READY arrived before HELLO.");
+            return;
+        }
+
+        if (_session.PeerReady)
+        {
+            await SendErrorAsync(ProtocolErrorCode.CONFLICT, "READY was already received.");
+            return;
+        }
+
+        _session.PeerReady = true;
+        if (_session.ReadySent)
+        {
+            BeginCombat();
+        }
+        else
+        {
+            _notice = "Your opponent is ready. Finish placing your fleet.";
+        }
+    }
+
+    private void BeginCombat()
+    {
+        if (_phase == MultiplayerPhase.Combat || _phase == MultiplayerPhase.GameOver)
+        {
+            return;
+        }
+
+        _phase = MultiplayerPhase.Combat;
+        _session.Turn = IsHost ? Side.Self : Side.Peer;
+        _session.Winner = null;
+        _notice = null;
+        _lastOutcome = IsHost
+            ? "Both fleets are ready. You fire first."
+            : "Both fleets are ready. Waiting for the host's first shot.";
+        AppLogger.Log("game_started", "multiplayer");
+
+        if (_session.Turn == Side.Peer)
+        {
+            StartPeerTurnWatch();
+        }
+    }
+
+    private async Task ReadyAsync()
+    {
+        if (!_session.OwnBoard.AllShipsPlaced)
+        {
+            _notice = "Place all five ships before you are ready.";
+            return;
+        }
+
+        if (_session.ReadySent)
+        {
+            return;
+        }
+
+        try
+        {
+            await SendAsync(ProtocolMessage.Ready());
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            SetError("INTERNAL", "Could not send READY.");
+            return;
+        }
+
+        _session.ReadySent = true;
+        AppLogger.Log("fleet_placed");
+
+        if (_session.PeerReady)
+        {
+            BeginCombat();
+        }
+        else
+        {
+            _phase = MultiplayerPhase.WaitingForReady;
+            _notice = "Waiting for your opponent to finish placing ships…";
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task FireAsync(Coordinate coordinate)
+    {
+        if (_phase != MultiplayerPhase.Combat
+            || _session.Turn != Side.Self
+            || _session.PendingSeq is not null)
+        {
+            return;
+        }
+
+        if (!coordinate.IsValid)
+        {
+            return;
+        }
+
+        if (_session.Target.IsTried(coordinate))
+        {
+            _notice = $"{coordinate.Label} has already been targeted.";
+            return;
+        }
+
+        var sequence = _session.NextSeq;
+        _session.PendingSeq = sequence;
+        _session.PendingCoordinate = coordinate;
+
+        try
+        {
+            await SendAsync(ProtocolMessage.Shot(sequence, coordinate.Label));
+            _session.NextSeq = sequence + 1;
+            _lastOutcome = $"Firing at {coordinate.Label}…";
+            _session.Turn = Side.Peer;
+            AppLogger.Log("shot_fired");
+            _ = WatchResultTimeoutAsync(sequence);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _session.PendingSeq = null;
+            _session.PendingCoordinate = null;
+            _session.Turn = Side.Self;
+            _notice = "The shot could not be sent.";
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnShotAsync(ProtocolMessage message)
+    {
+        if (!_session.HandshakeComplete
+            || _phase != MultiplayerPhase.Combat
+            || _session.Turn != Side.Peer
+            || _session.PendingSeq is not null)
+        {
+            var detail = _session.PendingSeq is not null
+                ? "A shot arrived before the pending result."
+                : "A shot arrived out of turn.";
+            await SendErrorAsync(ProtocolErrorCode.CONFLICT, detail);
+            return;
+        }
+
+        if (message.Seq != _session.PeerLastSeq + 1)
+        {
+            await SendErrorAsync(ProtocolErrorCode.CONFLICT, "A shot arrived out of sequence.");
+            return;
+        }
+
+        if (!Coordinate.TryParse(message.Coord, out var coordinate) || _session.OwnBoard.IsTried(coordinate))
+        {
+            await SendErrorAsync(ProtocolErrorCode.CONFLICT, "The shot coordinate is invalid or repeated.");
+            return;
+        }
+
+        _peerTurnWatchVersion++;
+        var result = _resolver.Resolve(_session.OwnBoard, coordinate);
+        _session.PeerLastSeq = message.Seq!.Value;
+        _lastOutcome = DescribeIncoming(result);
+        AppLogger.Log("shot_resolved");
+        if (result.Ship is ShipKind incomingKind)
+        {
+            AppLogger.Log("ship_sunk", incomingKind.ToString());
+        }
+
+        await SendAsync(ProtocolMessage.Result(message.Seq.Value, result.Outcome, result.Ship));
+
+        if (result.IsGameOver)
+        {
+            _session.Winner = Side.Peer;
+            _session.EndReason = "fleet_sunk";
+            _phase = MultiplayerPhase.GameOver;
+            _notice = "Your fleet was destroyed. Waiting for your opponent to finish…";
+            AppLogger.Log("game_over");
+            _ = WatchQuitTimeoutAsync();
+        }
+        else
+        {
+            _session.Turn = Side.Self;
+        }
+    }
+
+    private async Task OnResultAsync(ProtocolMessage message)
+    {
+        if (_session.PendingSeq is null
+            || message.Seq != _session.PendingSeq
+            || _session.PendingCoordinate is null)
+        {
+            await SendErrorAsync(ProtocolErrorCode.CONFLICT, "A result arrived without a matching shot.");
+            return;
+        }
+
+        if (message.Outcome is null)
+        {
+            await SendErrorAsync(ProtocolErrorCode.VALIDATION, "The result has no outcome.");
+            return;
+        }
+
+        var coordinate = _session.PendingCoordinate.Value;
+        _session.Target.Record(coordinate, message.Outcome.Value);
+        if (message.Ship is ShipKind sunkKind
+            && message.Outcome is ShotOutcome.SUNK or ShotOutcome.GAME_OVER)
+        {
+            _session.EnemySunk.Add(sunkKind);
+            _session.Target.MarkSunkLine(coordinate, Fleet.SizeOf(sunkKind));
+        }
+
+        _lastOutcome = DescribeOutgoing(coordinate, message.Outcome.Value, message.Ship);
+        _session.PendingSeq = null;
+        _session.PendingCoordinate = null;
+        AppLogger.Log("shot_resolved");
+        if (message.Ship is ShipKind reportedSunk)
+        {
+            AppLogger.Log("ship_sunk", reportedSunk.ToString());
+        }
+
+        if (message.Outcome == ShotOutcome.GAME_OVER)
+        {
+            _session.Winner = Side.Self;
+            _session.EndReason = "fleet_sunk";
+            _phase = MultiplayerPhase.GameOver;
+            AppLogger.Log("game_over");
+            await FinishAsWinnerAsync();
+        }
+        else
+        {
+            _session.Turn = Side.Peer;
+            StartPeerTurnWatch();
+        }
+    }
+
+    private async Task OnChatAsync(ProtocolMessage message)
+    {
+        if (!_session.HandshakeComplete)
+        {
+            await SendErrorAsync(ProtocolErrorCode.VALIDATION, "CHAT arrived before HELLO.");
+            return;
+        }
+
+        var text = ChatSanitizer.Sanitize(message.Text);
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        _session.Chat.Add(new ChatEntry(Side.Peer, text));
+        AppLogger.Log("chat_received");
+    }
+
+    private async Task SendChatAsync(string text)
+    {
+        if (!_session.HandshakeComplete
+            || _phase is MultiplayerPhase.Connecting or MultiplayerPhase.Error or MultiplayerPhase.GameOver)
+        {
+            return;
+        }
+
+        var clean = ChatSanitizer.Sanitize(text);
+        if (!ChatSanitizer.IsValid(clean))
+        {
+            _notice = "The chat message is empty or contains disallowed characters.";
+            return;
+        }
+
+        try
+        {
+            await SendAsync(ProtocolMessage.Chat(clean));
+            _session.Chat.Add(new ChatEntry(Side.Self, clean));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _notice = "The chat message could not be sent.";
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnQuitAsync()
+    {
+        if (_session.Winner is null)
+        {
+            _session.Winner = Side.Self;
+            _session.EndReason = "peer_left";
+        }
+
+        _phase = MultiplayerPhase.GameOver;
+        await CloseAsync(1000);
+        AppLogger.Log("peer_disconnected");
+    }
+
+    private async Task OnErrorAsync(ProtocolMessage message)
+    {
+        var code = message.Code ?? ProtocolErrorCode.FATAL;
+        var detail = ChatSanitizer.Sanitize(message.Detail);
+        if (detail.Length == 0)
+        {
+            detail = "The server rejected the last message.";
+        }
+
+        AppLogger.Log("protocol_error", code.ToString());
+
+        if (!_session.HandshakeComplete && code != ProtocolErrorCode.RATE_LIMITED)
+        {
+            SetError(code switch
+            {
+                ProtocolErrorCode.VERSION_MISMATCH => "VALIDATION_FAILED",
+                _ => "UPSTREAM_UNAVAILABLE"
+            }, detail);
+            await CloseAsync(1000);
+            return;
+        }
+
+        switch (code)
+        {
+            case ProtocolErrorCode.RATE_LIMITED:
+                ClearPendingShot();
+                _notice = "Slow down: the server is rate limiting messages.";
+                return;
+            case ProtocolErrorCode.VERSION_MISMATCH:
+                SetError("VALIDATION_FAILED", detail);
+                await CloseAsync(1000);
+                return;
+            case ProtocolErrorCode.FATAL:
+                SetError("INTERNAL", detail);
+                await CloseAsync(1000);
+                return;
+            default:
+                ClearPendingShot();
+                _notice = detail;
+                return;
+        }
+    }
+
+    private void ClearPendingShot()
+    {
+        if (_session.PendingSeq is int pending)
+        {
+            if (_session.NextSeq == pending + 1)
+            {
+                _session.NextSeq = pending;
+            }
+
+            _session.Turn = Side.Self;
+        }
+
+        _session.PendingSeq = null;
+        _session.PendingCoordinate = null;
+    }
+
+    private async Task FinishAsWinnerAsync()
+    {
+        try
+        {
+            await SendAsync(ProtocolMessage.Quit());
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The peer may already be gone.
+        }
+
+        await CloseAsync(1000);
+    }
+
+    private void OnSocketClosed(WsFrame frame)
+    {
+        if (_disposed || _phase is MultiplayerPhase.GameOver or MultiplayerPhase.Error)
+        {
+            return;
+        }
+
+        var code = frame.CloseStatus is { } status ? (int)status : (int?)null;
+
+        if (!_session.HandshakeComplete)
+        {
+            switch (code)
+            {
+                case 4004:
+                    SetError("NOT_FOUND", "The room does not exist, or the host has not connected yet.");
+                    return;
+                case 4009:
+                    SetError("CONFLICT", "The room is full.");
+                    return;
+                case 4029:
+                    SetError("RATE_LIMITED", "Too many connection attempts. Try again shortly.");
+                    return;
+                case 4400:
+                    SetError("VALIDATION_FAILED", "The room code or role is invalid.");
+                    return;
+                case 1001:
+                    SetError("UPSTREAM_UNAVAILABLE", "The server is shutting down.");
+                    return;
+                case 1002:
+                    SetError("VALIDATION_FAILED", "The protocol handshake failed.");
+                    return;
+                case 1011:
+                    SetError("UPSTREAM_UNAVAILABLE", "The server encountered an error.");
+                    return;
+                default:
+                    SetError("UPSTREAM_UNAVAILABLE", code is null
+                        ? "The connection closed before the handshake completed."
+                        : $"The connection closed before the handshake completed ({code}).");
+                    return;
+            }
+        }
+
+        if (code == 4001)
+        {
+            if (_session.Winner is null)
+            {
+                _session.Winner = Side.Self;
+                _session.EndReason = "peer_left";
+            }
+
+            _notice = "Your opponent left the game.";
+        }
+        else
+        {
+            _session.EndReason ??= "connection_lost";
+            _notice = "The connection was lost.";
+        }
+
+        _phase = MultiplayerPhase.GameOver;
+        AppLogger.Log("connection_lost");
+    }
+
+    private async Task SendAsync(ProtocolMessage message) =>
+        await Ws.SendAsync(message, _lifetime.Token);
+
+    private async Task SendErrorAsync(ProtocolErrorCode code, string detail)
+    {
+        try
+        {
+            await SendAsync(ProtocolMessage.Error(code, detail));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The socket is gone; nothing else to do.
+        }
+    }
+
+    private async Task CloseAsync(int code)
+    {
+        _closing = true;
+        try
+        {
+            await Ws.CloseAsync(code, null);
+        }
+        catch
+        {
+            // The socket is already closed.
+        }
+    }
+
+    private async Task<bool> WaitForHandshakeAsync(TimeSpan timeout)
+    {
+        try
+        {
+            await _handshake.Task.WaitAsync(timeout, _lifetime.Token);
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            return false;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private async Task WatchResultTimeoutAsync(int sequence)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(_options.ReadTimeoutSeconds), _lifetime.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (_disposed || _phase != MultiplayerPhase.Combat || _session.PendingSeq != sequence)
+        {
+            return;
+        }
+
+        SetError("INTERNAL", "Timed out waiting for the opponent's result.");
+        await CloseAsync(1011);
+    }
+
+    private void StartPeerTurnWatch()
+    {
+        var version = ++_peerTurnWatchVersion;
+        _ = WatchPeerTurnTimeoutAsync(version);
+    }
+
+    private async Task WatchPeerTurnTimeoutAsync(int version)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(_options.ReadTimeoutSeconds), _lifetime.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (_disposed
+            || version != _peerTurnWatchVersion
+            || _phase != MultiplayerPhase.Combat
+            || _session.Turn != Side.Peer
+            || _session.PendingSeq is not null)
+        {
+            return;
+        }
+
+        SetError("INTERNAL", "Timed out waiting for the opponent's shot.");
+        await CloseAsync(1011);
+    }
+
+    private async Task WatchQuitTimeoutAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(_options.HandshakeTimeoutSeconds), _lifetime.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (_disposed
+            || _phase != MultiplayerPhase.GameOver
+            || _session.Winner != Side.Peer
+            || _session.EndReason != "fleet_sunk")
+        {
+            return;
+        }
+
+        await InvokeAsync(() => CloseAsync(1000));
+    }
+
+    private async Task<T> WithTimeoutAsync<T>(int seconds, Func<CancellationToken, Task<T>> action)
+    {
+        using var source = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        source.CancelAfter(TimeSpan.FromSeconds(seconds));
+        return await action(source.Token);
+    }
+
+    private string BuildJoinLink(string code) =>
+        new Uri(new Uri(Navigation.BaseUri), $"join/{code}").ToString();
+
+    private async Task CopyLinkAsync()
+    {
+        if (_joinLink is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("battleship.copyText", _joinLink);
+            _notice = "Join link copied.";
+        }
+        catch
+        {
+            _notice = "Could not copy; select the link manually.";
+        }
+    }
+
+    private void OnPlacementChanged() => StateHasChanged();
+
+    private void SetError(string code, string detail)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _errorCode = code;
+        _errorDetail = detail;
+        _phase = MultiplayerPhase.Error;
+        _handshake.TrySetResult(false);
+        AppLogger.Log("protocol_error", code);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task QuitAsync()
+    {
+        if (_session.HandshakeComplete && Ws.IsOpen)
+        {
+            try
+            {
+                await SendAsync(ProtocolMessage.Quit());
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Leaving anyway.
+            }
+        }
+
+        await CloseAsync(1000);
+        Navigation.NavigateTo("/");
+    }
+
+    private void GoMenu() => Navigation.NavigateTo("/");
+
+    private static string DescribeIncoming(ShotResult result)
+    {
+        var shipName = result.Ship is ShipKind kind ? Fleet.NameOf(kind) : "ship";
+        return result.Outcome switch
+        {
+            ShotOutcome.MISS => $"Opponent fired at {result.Coordinate}: miss.",
+            ShotOutcome.HIT => $"Opponent fired at {result.Coordinate}: hit on your fleet.",
+            ShotOutcome.SUNK => $"Opponent sank your {shipName} at {result.Coordinate}.",
+            ShotOutcome.GAME_OVER => $"Opponent sank your {shipName} at {result.Coordinate} — your fleet is destroyed.",
+            _ => $"Opponent fired at {result.Coordinate}."
+        };
+    }
+
+    private static string DescribeOutgoing(Coordinate coordinate, ShotOutcome outcome, ShipKind? ship)
+    {
+        var shipName = ship is ShipKind kind ? Fleet.NameOf(kind) : "ship";
+        return outcome switch
+        {
+            ShotOutcome.MISS => $"You fired at {coordinate}: miss.",
+            ShotOutcome.HIT => $"You fired at {coordinate}: hit!",
+            ShotOutcome.SUNK => $"You sank the {shipName} at {coordinate}.",
+            ShotOutcome.GAME_OVER => $"You sank the {shipName} at {coordinate} — game over.",
+            _ => $"You fired at {coordinate}."
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        try
+        {
+            if (_session.HandshakeComplete && Ws.IsOpen)
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                try
+                {
+                    await Ws.SendAsync(ProtocolMessage.Quit(), timeout.Token);
+                }
+                catch
+                {
+                    // The peer is gone.
+                }
+            }
+
+            await Ws.CloseAsync(1000, "page left");
+        }
+        finally
+        {
+            _lifetime.Cancel();
+            if (_receiveTask is not null)
+            {
+                try
+                {
+                    await _receiveTask.WaitAsync(TimeSpan.FromSeconds(2));
+                }
+                catch
+                {
+                    // The receive loop is stopping.
+                }
+            }
+
+            await Ws.DisposeAsync();
+            _lifetime.Dispose();
+        }
+    }
+}

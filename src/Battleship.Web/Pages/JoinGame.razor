@@ -1,0 +1,9 @@
+@page "/join/{RoomCode}"
+
+<PageTitle>Join a game</PageTitle>
+
+<MultiplayerGame IsHost="false" RoomCode="@RoomCode" />
+
+@code {
+    [Parameter] public string? RoomCode { get; set; }
+}

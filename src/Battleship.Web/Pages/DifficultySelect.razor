@@ -1,0 +1,53 @@
+@page "/single"
+@inject NavigationManager Navigation
+
+<PageTitle>Choose difficulty</PageTitle>
+
+<section class="page">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">Single player</p>
+            <h1>Choose your opponent</h1>
+            <p class="subtle">Medium is selected by default.</p>
+        </div>
+        <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+    </header>
+
+    <fieldset class="difficulty-grid">
+        <legend class="sr-only">Difficulty</legend>
+        @foreach (var option in Options)
+        {
+            <label class="difficulty-card @(Selected == option.Key ? "selected" : string.Empty)">
+                <input type="radio"
+                       name="difficulty"
+                       value="@option.Key"
+                       checked="@(Selected == option.Key)"
+                       @onchange="() => Selected = option.Key" />
+                <span class="difficulty-name">@option.Name</span>
+                <span class="difficulty-copy">@option.Description</span>
+            </label>
+        }
+    </fieldset>
+
+    <div class="actions">
+        <button class="btn primary" type="button" @onclick="Start">Start game</button>
+        <button class="btn ghost" type="button" @onclick="GoMenu">Back</button>
+    </div>
+</section>
+
+@code {
+    private sealed record DifficultyOption(string Key, string Name, string Description);
+
+    private static readonly DifficultyOption[] Options =
+    {
+        new("easy", "Easy", "Fires at a uniformly random untried cell every turn."),
+        new("medium", "Medium", "Hunts at random, then follows up on hits until the ship sinks."),
+        new("hard", "Hard", "Counts legal fleet placements and targets the most probable cells.")
+    };
+
+    private string Selected { get; set; } = "medium";
+
+    private void Start() => Navigation.NavigateTo($"/single/{Selected}");
+
+    private void GoMenu() => Navigation.NavigateTo("/");
+}

@@ -1,0 +1,394 @@
+@page "/single/{Difficulty}"
+@using System.Diagnostics
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+@implements IAsyncDisposable
+
+<PageTitle>Battleship — @_difficulty</PageTitle>
+
+<section class="page">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">Single player</p>
+            <h1>Your command</h1>
+            <p class="subtle">
+                Difficulty:
+                <span class="badge" data-difficulty="@_difficulty">@_difficulty</span>
+            </p>
+        </div>
+        <div class="header-actions">
+            <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+        </div>
+    </header>
+
+    @if (_phase == Phase.Error)
+    {
+        <div class="panel error" role="alert">
+            <h2>Something went wrong</h2>
+            <p>@_error</p>
+            <div class="actions">
+                <button class="btn primary" type="button" @onclick="Rematch">Try again</button>
+                <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+            </div>
+        </div>
+    }
+    else if (_phase == Phase.Setup)
+    {
+        <div class="panel">
+            <h2>Place your fleet</h2>
+            <p class="subtle">
+                Manual placement: click or tap a cell to place the first unplaced ship, drag a ship
+                card onto a cell, use the arrow keys and <kbd>R</kbd> to rotate, or choose automatic placement.
+            </p>
+            <PlacementPanel @key="_gameKey" Board="_humanBoard" OnChanged="OnPlacementChanged" />
+            @if (_placementMessage is not null)
+            {
+                <p class="notice">@_placementMessage</p>
+            }
+            <div class="actions">
+                <button class="btn primary"
+                        type="button"
+                        disabled="@(!_humanBoard.AllShipsPlaced)"
+                        @onclick="StartBattle">
+                    Start battle
+                </button>
+                <button class="btn" type="button" @onclick="ChangeDifficulty">Change difficulty</button>
+                <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="status-row">
+            <span class="badge">@TurnText</span>
+            @if (!string.IsNullOrEmpty(_lastOutcome))
+            {
+                <span class="notice" role="status">@_lastOutcome</span>
+            }
+        </div>
+
+        <div class="boards">
+            <div class="board-panel">
+                <h2>Your waters</h2>
+                <BoardGrid Cells="@BoardView.Own(_humanBoard)"
+                           Interactive="false"
+                           Label="Your board" />
+                <FleetStatus Ships="_humanBoard.Ships" Title="Your fleet" />
+            </div>
+            <div class="board-panel">
+                <h2>Enemy waters</h2>
+                <BoardGrid Cells="@BoardView.Target(_target)"
+                           Interactive="@(_phase == Phase.Combat && _humanTurn && !_busy)"
+                           Label="Enemy targeting board"
+                           OnActivate="FireAsync" />
+                <FleetStatus Ships="_aiBoard.Ships" Title="Enemy fleet" />
+            </div>
+        </div>
+
+        @if (_phase == Phase.Over)
+        {
+            <div class="panel game-over" role="status">
+                <p class="eyebrow">Game over</p>
+                <h2>@WinnerTitle</h2>
+                <p class="subtle">
+                    Difficulty played: <span class="badge">@_difficulty</span>
+                </p>
+                <p>@_lastOutcome</p>
+                <div class="actions">
+                    <button class="btn primary" type="button" @onclick="Rematch">Rematch</button>
+                    <button class="btn" type="button" @onclick="ChangeDifficulty">Change difficulty</button>
+                    <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+                </div>
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private enum Phase
+    {
+        Setup,
+        Combat,
+        Over,
+        Error
+    }
+
+    private readonly ShotResolver _resolver = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private GameOptions _options = new();
+    private Random _random = new();
+    private Board _humanBoard = new();
+    private Board _aiBoard = new();
+    private TargetBoard _target = new();
+    private AiView _aiKnowledge = new();
+    private IAiStrategy _strategy = null!;
+    private Phase _phase = Phase.Setup;
+    private string _difficulty = "medium";
+    private string? _error;
+    private string? _lastOutcome;
+    private string? _placementMessage;
+    private Side? _winner;
+    private bool _humanTurn = true;
+    private bool _busy;
+    private bool _aiThinking;
+    private bool _disposed;
+    private int _gameKey;
+    private int _gameId;
+    private bool _initialized;
+
+    [Parameter] public string? Difficulty { get; set; }
+
+    private string TurnText => _phase switch
+    {
+        Phase.Over => "Game over",
+        Phase.Error => "Error",
+        _ when _aiThinking => "The AI is aiming…",
+        _ when _humanTurn => "Your turn — choose a target",
+        _ => "Waiting for the AI"
+    };
+
+    private string WinnerTitle => _winner == Side.Self ? "You win!" : "The AI wins";
+
+    protected override void OnParametersSet()
+    {
+        var difficulty = (Difficulty ?? string.Empty).Trim().ToLowerInvariant();
+        if (difficulty is not ("easy" or "medium" or "hard"))
+        {
+            Navigation.NavigateTo("/single/medium", replace: true);
+            return;
+        }
+
+        if (_initialized && string.Equals(difficulty, _difficulty, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _difficulty = difficulty;
+        _options = GameOptions.FromConfiguration(Configuration);
+        _initialized = true;
+        StartNewGame();
+    }
+
+    private void StartNewGame()
+    {
+        _gameId++;
+        _random = _options.AiSeed is int seed ? new Random(seed) : new Random();
+        _humanBoard = new Board();
+        _aiBoard = new Board();
+        _target = new TargetBoard();
+        _aiKnowledge = new AiView();
+        _strategy = AiStrategyFactory.Create(_difficulty, _random);
+        _phase = Phase.Setup;
+        _winner = null;
+        _error = null;
+        _lastOutcome = null;
+        _placementMessage = null;
+        _humanTurn = true;
+        _busy = false;
+        _aiThinking = false;
+        _gameKey++;
+
+        if (!_aiBoard.TryAutoPlaceAll(_random))
+        {
+            _error = "The AI fleet could not be placed. Try again.";
+            _phase = Phase.Error;
+            return;
+        }
+
+        AppLogger.Log("game_started", _difficulty);
+        AppLogger.Log("difficulty_selected", _difficulty);
+    }
+
+    private void OnPlacementChanged() => StateHasChanged();
+
+    private void StartBattle()
+    {
+        if (!_humanBoard.AllShipsPlaced)
+        {
+            _placementMessage = "Place all five ships before starting the battle.";
+            return;
+        }
+
+        _phase = Phase.Combat;
+        _humanTurn = true;
+        _lastOutcome = "Battle stations. Fire when ready.";
+        AppLogger.Log("fleet_placed");
+        StateHasChanged();
+    }
+
+    private async Task FireAsync(Coordinate coordinate)
+    {
+        if (_phase != Phase.Combat || !_humanTurn || _busy || _disposed)
+        {
+            return;
+        }
+
+        if (!coordinate.IsValid)
+        {
+            return;
+        }
+
+        if (_target.IsTried(coordinate))
+        {
+            _lastOutcome = $"{coordinate.Label} has already been targeted.";
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var result = _resolver.Resolve(_aiBoard, coordinate);
+            _target.Record(coordinate, result.Outcome);
+            if (result.Ship is ShipKind sunkKind)
+            {
+                var sunkShip = _aiBoard.Ships.FirstOrDefault(s => s.Kind == sunkKind);
+                if (sunkShip is not null)
+                {
+                    _target.MarkSunk(sunkShip.Cells);
+                }
+            }
+
+            _lastOutcome = Describe(result, "You");
+            AppLogger.Log("shot_fired");
+            AppLogger.Log("shot_resolved");
+            if (result.Ship is ShipKind hitKind)
+            {
+                AppLogger.Log("ship_sunk", hitKind.ToString());
+            }
+
+            if (result.IsGameOver)
+            {
+                EndGame(Side.Self);
+                return;
+            }
+
+            _humanTurn = false;
+            _aiThinking = true;
+            StateHasChanged();
+            await AiTurnAsync(_gameId);
+        }
+        finally
+        {
+            _busy = false;
+            _aiThinking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AiTurnAsync(int gameId)
+    {
+        try
+        {
+            await Task.Delay(_options.AiMoveDelayMs, _lifetime.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (_disposed || gameId != _gameId || _phase != Phase.Combat)
+        {
+            return;
+        }
+
+        Coordinate shot;
+        var watch = Stopwatch.StartNew();
+        try
+        {
+            shot = _strategy.ChooseShot(_aiKnowledge);
+        }
+        catch (InvalidOperationException)
+        {
+            var fallback = _aiKnowledge.Untried();
+            if (fallback.Count == 0)
+            {
+                EndGame(Side.Self);
+                return;
+            }
+
+            shot = fallback[_random.Next(fallback.Count)];
+        }
+
+        if (watch.ElapsedMilliseconds > _options.AiDecisionBudgetMs || !_aiKnowledge.IsUntried(shot))
+        {
+            var untried = _aiKnowledge.Untried();
+            if (untried.Count == 0)
+            {
+                EndGame(Side.Self);
+                return;
+            }
+
+            shot = untried[_random.Next(untried.Count)];
+        }
+
+        if (_disposed || gameId != _gameId || _phase != Phase.Combat)
+        {
+            return;
+        }
+
+        var result = _resolver.Resolve(_humanBoard, shot);
+        _aiKnowledge.RecordShot(shot, result.Outcome, result.Ship);
+        _lastOutcome = Describe(result, "AI");
+        AppLogger.Log("shot_resolved");
+        if (result.Ship is ShipKind hitKind)
+        {
+            AppLogger.Log("ship_sunk", hitKind.ToString());
+        }
+
+        if (result.IsGameOver)
+        {
+            EndGame(Side.Peer);
+            return;
+        }
+
+        _humanTurn = true;
+        StateHasChanged();
+    }
+
+    private void EndGame(Side winner)
+    {
+        _winner = winner;
+        _phase = Phase.Over;
+        _humanTurn = false;
+        _aiThinking = false;
+        AppLogger.Log("game_over");
+        StateHasChanged();
+    }
+
+    private static string Describe(ShotResult result, string shooter)
+    {
+        var shipName = result.Ship is ShipKind kind ? Fleet.NameOf(kind) : "ship";
+        return result.Outcome switch
+        {
+            ShotOutcome.MISS => $"{shooter} missed at {result.Coordinate}.",
+            ShotOutcome.HIT => $"{shooter} hit a ship at {result.Coordinate}.",
+            ShotOutcome.SUNK => $"{shooter} sank the {shipName} at {result.Coordinate}.",
+            ShotOutcome.GAME_OVER => $"{shooter} sank the {shipName} at {result.Coordinate} — game over.",
+            _ => $"{shooter} fired at {result.Coordinate}."
+        };
+    }
+
+    private void Rematch()
+    {
+        StartNewGame();
+        StateHasChanged();
+    }
+
+    private void ChangeDifficulty() => Navigation.NavigateTo("/single");
+
+    private void GoMenu() => Navigation.NavigateTo("/");
+
+    public ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        _disposed = true;
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+        AppLogger.Log("game_disposed");
+        return ValueTask.CompletedTask;
+    }
+}

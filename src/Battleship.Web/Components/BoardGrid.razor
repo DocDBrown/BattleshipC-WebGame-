@@ -1,0 +1,130 @@
+@inject IJSRuntime JS
+
+<div class="board-frame">
+    <div class="board" role="grid" aria-label="@Label" @onkeydown="HandleKeyDown">
+        @foreach (var cell in Cells)
+        {
+            <button type="button"
+                    id="@CellId(cell.Coordinate)"
+                    class="cell @StateClass(cell.State) @(cell.Coordinate == Cursor ? "cursor" : string.Empty)"
+                    role="gridcell"
+                    aria-label="@AriaLabel(cell)"
+                    disabled="@(!Interactive)"
+                    @onclick="() => ActivateAsync(cell)"
+                    @onfocus="() => Cursor = cell.Coordinate"
+                    @ondrop="() => DropAsync(cell)"
+                    @ondrop:preventDefault
+                    @ondragover:preventDefault
+                    @ondragstart:preventDefault>
+                <span class="cell-glyph" aria-hidden="true">@Glyph(cell.State)</span>
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly string _id = Guid.NewGuid().ToString("N")[..8];
+    private Coordinate Cursor { get; set; } = new(0, 0);
+
+    [Parameter] public IReadOnlyList<CellView> Cells { get; set; } = Array.Empty<CellView>();
+    [Parameter] public bool Interactive { get; set; } = true;
+    [Parameter] public string Label { get; set; } = "Board";
+    [Parameter] public EventCallback<Coordinate> OnActivate { get; set; }
+    [Parameter] public EventCallback<Coordinate> OnDrop { get; set; }
+    [Parameter] public EventCallback OnRotate { get; set; }
+
+    private async Task ActivateAsync(CellView cell)
+    {
+        if (!Interactive)
+        {
+            return;
+        }
+
+        Cursor = cell.Coordinate;
+        await OnActivate.InvokeAsync(cell.Coordinate);
+    }
+
+    private async Task DropAsync(CellView cell)
+    {
+        if (!Interactive)
+        {
+            return;
+        }
+
+        Cursor = cell.Coordinate;
+        await OnDrop.InvokeAsync(cell.Coordinate);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (!Interactive)
+        {
+            return;
+        }
+
+        if (args.Key is "r" or "R")
+        {
+            await OnRotate.InvokeAsync();
+            return;
+        }
+
+        var (rowDelta, colDelta) = args.Key switch
+        {
+            "ArrowUp" => (-1, 0),
+            "ArrowDown" => (1, 0),
+            "ArrowLeft" => (0, -1),
+            "ArrowRight" => (0, 1),
+            _ => (0, 0)
+        };
+
+        if (rowDelta == 0 && colDelta == 0)
+        {
+            return;
+        }
+
+        var next = new Coordinate(
+            Math.Clamp(Cursor.Row + rowDelta, 0, BoardCoords.Size - 1),
+            Math.Clamp(Cursor.Col + colDelta, 0, BoardCoords.Size - 1));
+
+        if (next != Cursor)
+        {
+            Cursor = next;
+            await JS.InvokeVoidAsync("battleship.focusById", CellId(Cursor));
+        }
+    }
+
+    private string CellId(Coordinate coordinate) =>
+        $"cell-{_id}-{coordinate.Row}-{coordinate.Col}";
+
+    private string AriaLabel(CellView cell) => $"{cell.Coordinate.Label} {StateText(cell.State)}";
+
+    private static string StateClass(CellState state) => state switch
+    {
+        CellState.Unknown => "unknown",
+        CellState.Empty => "empty",
+        CellState.Ship => "ship",
+        CellState.Hit => "hit",
+        CellState.Miss => "miss",
+        CellState.Sunk => "sunk",
+        _ => "empty"
+    };
+
+    private static string StateText(CellState state) => state switch
+    {
+        CellState.Unknown => "unknown",
+        CellState.Empty => "empty water",
+        CellState.Ship => "your ship",
+        CellState.Hit => "hit",
+        CellState.Miss => "miss",
+        CellState.Sunk => "sunk ship",
+        _ => "cell"
+    };
+
+    private static string Glyph(CellState state) => state switch
+    {
+        CellState.Hit => "✕",
+        CellState.Miss => "•",
+        CellState.Sunk => "✖",
+        _ => string.Empty
+    };
+}

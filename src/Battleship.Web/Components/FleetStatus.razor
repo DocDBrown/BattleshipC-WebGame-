@@ -1,0 +1,26 @@
+<div class="fleet-status">
+    <h3>@Title</h3>
+    <ul>
+        @foreach (var definition in Fleet.Ships)
+        {
+            var sunk = IsSunk(definition.Kind);
+            <li class="@(sunk ? "sunk" : string.Empty)">
+                <span class="fleet-name">@definition.Name</span>
+                <span class="fleet-size">@definition.Size</span>
+                <span class="fleet-state">@(sunk ? "Sunk" : "Afloat")</span>
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<Ship> Ships { get; set; } = Array.Empty<Ship>();
+    [Parameter] public IReadOnlySet<ShipKind>? SunkKinds { get; set; }
+    [Parameter] public string Title { get; set; } = "Fleet";
+
+    private bool IsSunk(ShipKind kind)
+    {
+        var ship = Ships.FirstOrDefault(s => s.Kind == kind);
+        return ship?.IsSunk ?? (SunkKinds?.Contains(kind) ?? false);
+    }
+}

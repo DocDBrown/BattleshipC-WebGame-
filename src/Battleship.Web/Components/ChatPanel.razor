@@ -1,0 +1,48 @@
+<div class="chat-panel">
+    <h3>Chat</h3>
+    <div class="chat-log" aria-live="polite">
+        @if (Entries.Count == 0)
+        {
+            <p class="subtle">No messages yet.</p>
+        }
+        @foreach (var entry in Entries)
+        {
+            <p class="chat-entry @(entry.Side == Side.Self ? "mine" : "theirs")">
+                <span class="chat-author">@(entry.Side == Side.Self ? "You" : "Opponent"):</span>
+                <span class="chat-text">@entry.Text</span>
+            </p>
+        }
+    </div>
+    <form class="chat-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+        <label class="sr-only" for="chat-input">Chat message</label>
+        <input id="chat-input"
+               maxlength="200"
+               placeholder="Message your opponent"
+               @bind="Text"
+               @bind:event="oninput"
+               disabled="@Disabled" />
+        <button class="btn primary" type="submit" disabled="@(Disabled || !CanSend)">Send</button>
+    </form>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<ChatEntry> Entries { get; set; } = Array.Empty<ChatEntry>();
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<string> OnSend { get; set; }
+
+    private string Text { get; set; } = string.Empty;
+
+    private bool CanSend => !string.IsNullOrWhiteSpace(Text);
+
+    private async Task SubmitAsync()
+    {
+        var clean = ChatSanitizer.Sanitize(Text);
+        if (clean.Length == 0)
+        {
+            return;
+        }
+
+        await OnSend.InvokeAsync(clean);
+        Text = string.Empty;
+    }
+}
