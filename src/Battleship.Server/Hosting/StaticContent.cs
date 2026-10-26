@@ -13,7 +13,9 @@ public static class StaticContent
 
         if (path.EndsWith("index.html", StringComparison.OrdinalIgnoreCase)
             || path.EndsWith("appsettings.json", StringComparison.OrdinalIgnoreCase)
-            || path.EndsWith("blazor.boot.json", StringComparison.OrdinalIgnoreCase))
+            || path.EndsWith("Battleship.Web.styles.css", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith("blazor.webassembly.js", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith("/dotnet.js", StringComparison.OrdinalIgnoreCase))
         {
             headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
             headers["Pragma"] = "no-cache";

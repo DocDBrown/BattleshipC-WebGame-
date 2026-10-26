@@ -14,7 +14,9 @@ RUN dotnet publish src/Battleship.Web/Battleship.Web.csproj -c Release -o /out/w
 RUN dotnet publish src/Battleship.Server/Battleship.Server.csproj -c Release -o /out/server /p:UseAppHost=false
 RUN mkdir -p /out/server/wwwroot && cp -R /out/web/wwwroot/. /out/server/wwwroot/ \
     && test -f /out/server/wwwroot/index.html \
-    && test -f /out/server/wwwroot/_framework/blazor.boot.json
+    && test -f /out/server/wwwroot/Battleship.Web.styles.css \
+    && test -f /out/server/wwwroot/_framework/blazor.webassembly.js \
+    && test -f /out/server/wwwroot/_framework/dotnet.js
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

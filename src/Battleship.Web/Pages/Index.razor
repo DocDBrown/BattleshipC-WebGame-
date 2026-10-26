@@ -1,15 +1,30 @@
+@* Index.razor *@
 @page "/"
+@using System.Text.Json.Nodes
 @inject NavigationManager Navigation
 
-<PageTitle>Battleship</PageTitle>
+<SeoMeta Title="@PageTitleText" Description="@PageDescription" Path="/" JsonLd="@_jsonLd" />
 
-<section class="hero">
-    <p class="eyebrow">Web Battleship</p>
-    <h1>Sink the fleet. Keep your waters secret.</h1>
-    <p class="lede">
-        Play a local game against an AI that only knows what it has hit, or open a room
-        and trade shots with a friend over a WebSocket relay.
-    </p>
+<section class="hero-shell">
+    <div class="hero">
+        <p class="eyebrow">Web Battleship</p>
+        <h1>Sink the fleet. Keep your waters secret.</h1>
+        <p class="lede">
+            Play a local game against an AI that only knows what it has hit, or open a room
+            and trade shots with a friend over a WebSocket relay.
+        </p>
+        <ul class="feature-strip" aria-label="Game features">
+            <li><strong>No download</strong>Runs in your browser</li>
+            <li><strong>Private fleets</strong>Ship positions stay local</li>
+            <li><strong>Three AIs</strong>Easy, medium and hard</li>
+        </ul>
+    </div>
+    <figure class="hero-art">
+        <img src="battleship1.webp"
+             alt="A battleship firing its guns while cutting through heavy seas"
+             width="1024"
+             height="1024" />
+    </figure>
 </section>
 
 <div class="menu-grid">
@@ -54,8 +69,59 @@
 </section>
 
 @code {
+    private const string PageTitleText = "Battleship Online — Play Free vs AI or a Friend";
+    private const string PageDescription = "Play Battleship free in your browser. Challenge an easy, medium or hard AI, or host a room and play a friend online with a six-character code. No sign-up, no download, open source.";
+
     private string _roomCode = string.Empty;
     private string? _error;
+    private string _jsonLd = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        var home = SeoInfo.Absolute(Navigation.BaseUri, "/");
+        _jsonLd = SeoInfo.ToJsonLd(new JsonObject
+        {
+            ["@context"] = "https://schema.org",
+            ["@graph"] = new JsonArray(
+                new JsonObject
+                {
+                    ["@type"] = "WebSite",
+                    ["@id"] = home + "#website",
+                    ["name"] = SeoInfo.SiteName,
+                    ["url"] = home,
+                    ["inLanguage"] = "en"
+                },
+                new JsonObject
+                {
+                    ["@type"] = "WebApplication",
+                    ["@id"] = home + "#app",
+                    ["name"] = SeoInfo.SiteName,
+                    ["url"] = home,
+                    ["description"] = PageDescription,
+                    ["applicationCategory"] = "GameApplication",
+                    ["genre"] = "Strategy",
+                    ["operatingSystem"] = "Any (web browser)",
+                    ["browserRequirements"] = "Requires JavaScript and WebAssembly",
+                    ["isAccessibleForFree"] = true,
+                    ["inLanguage"] = "en",
+                    ["image"] = SeoInfo.Absolute(Navigation.BaseUri, SeoInfo.ImagePath),
+                    ["offers"] = new JsonObject
+                    {
+                        ["@type"] = "Offer",
+                        ["price"] = "0",
+                        ["priceCurrency"] = "AUD"
+                    },
+                    ["sameAs"] = new JsonArray(JsonValue.Create(SeoInfo.RepositoryUrl)),
+                    ["isBasedOn"] = new JsonObject
+                    {
+                        ["@type"] = "SoftwareSourceCode",
+                        ["codeRepository"] = SeoInfo.RepositoryUrl,
+                        ["programmingLanguage"] = "C#",
+                        ["runtimePlatform"] = "Blazor WebAssembly"
+                    }
+                })
+        });
+    }
 
     private string RoomCodeInput
     {

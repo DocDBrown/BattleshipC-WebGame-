@@ -40,8 +40,11 @@
     }
     else
     {
-        <div class="status-row">
-            <span class="badge">@PhaseText</span>
+        <div class="status-bar">
+            <div class="turn-indicator @TurnStateClass">
+                <span class="turn-dot" aria-hidden="true"></span>
+                <span class="badge">@PhaseText</span>
+            </div>
             @if (!string.IsNullOrEmpty(_notice))
             {
                 <span class="notice" role="status">@_notice</span>
@@ -104,30 +107,50 @@
         {
             <div class="boards">
                 <div class="board-panel">
-                    <h2>Your waters</h2>
+                    <div class="board-heading">
+                        <h2>Your waters</h2>
+                        <span class="board-stat">@(_session.OwnBoard.Ships.Count(ship => !ship.IsSunk)) afloat</span>
+                    </div>
                     <BoardGrid Cells="@BoardView.Own(_session.OwnBoard)"
                                Interactive="false"
                                Label="Your board" />
                     <FleetStatus Ships="_session.OwnBoard.Ships" Title="Your fleet" />
                 </div>
                 <div class="board-panel">
-                    <h2>Enemy waters</h2>
+                    <div class="board-heading">
+                        <h2>Enemy waters</h2>
+                        <span class="board-stat">@(Fleet.Ships.Count - _session.EnemySunk.Count) afloat</span>
+                    </div>
                     <BoardGrid Cells="@BoardView.Target(_session.Target)"
                                Interactive="@(_phase == MultiplayerPhase.Combat && _session.Turn == Side.Self && _session.PendingSeq is null)"
                                Label="Enemy targeting board"
                                OnActivate="FireAsync" />
+                    <div class="board-meta" aria-label="Your battle statistics">
+                        <span>Shots <strong>@_session.Target.Shots.Count</strong></span>
+                        <span>Hits <strong>@(_session.Target.Shots.Values.Count(outcome => outcome is not ShotOutcome.MISS))</strong></span>
+                    </div>
                     <FleetStatus Ships="Array.Empty<Ship>()"
                                  SunkKinds="_session.EnemySunk"
                                  Title="Enemy fleet" />
                 </div>
             </div>
 
-            <div class="status-row">
-                <span class="badge">@TurnText</span>
+            <div class="status-bar">
+                <div class="turn-indicator @TurnStateClass">
+                    <span class="turn-dot" aria-hidden="true"></span>
+                    <span class="badge">@TurnText</span>
+                </div>
                 @if (!string.IsNullOrEmpty(_lastOutcome))
                 {
                     <span class="notice" role="status">@_lastOutcome</span>
                 }
+            </div>
+
+            <div class="board-legend" aria-label="Board legend">
+                <span><i class="legend-swatch ship"></i>Ship</span>
+                <span><i class="legend-swatch hit"></i>Hit</span>
+                <span><i class="legend-swatch miss"></i>Miss</span>
+                <span><i class="legend-swatch sunk"></i>Sunk</span>
             </div>
         }
 
@@ -183,7 +206,7 @@
         MultiplayerPhase.WaitingForPeer => IsHost ? "Waiting for an opponent…" : "Waiting for the host…",
         MultiplayerPhase.Placement => "Place your fleet",
         MultiplayerPhase.WaitingForReady => "Waiting for your opponent to be ready",
-        MultiplayerPhase.Combat => _session.Turn == Side.Self ? "Your turn" : "Opponent's turn",
+        MultiplayerPhase.Combat => "Battle in progress",
         MultiplayerPhase.GameOver => "Game over",
         MultiplayerPhase.Error => _errorCode ?? "Error",
         _ => string.Empty
@@ -196,6 +219,13 @@
             : _session.Turn == Side.Self
                 ? "Your turn — choose a target"
                 : "Opponent's turn";
+
+    private string TurnStateClass => _phase switch
+    {
+        MultiplayerPhase.Combat when _session.PendingSeq is not null => "thinking",
+        MultiplayerPhase.Combat when _session.Turn == Side.Self => "ready",
+        _ => "waiting"
+    };
 
     private string WinnerTitle => _session.Winner switch
     {

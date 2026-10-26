@@ -1,7 +1,12 @@
+@* Help.razor *@
 @page "/help"
+@using System.Text.Json.Nodes
 @inject NavigationManager Navigation
 
-<PageTitle>How to play</PageTitle>
+<SeoMeta Title="How to Play Battleship — Rules, Controls & FAQ"
+         Description="Battleship rules, fleet sizes, mouse, touch and keyboard controls, how the easy, medium and hard AI work, and how to play a friend online with a room code."
+         Path="/help"
+         JsonLd="@FaqJsonLd" />
 
 <section class="page help-page">
     <header class="page-header">
@@ -57,8 +62,63 @@
             <p class="subtle">Your unhit ship positions stay in your browser and are never sent to the server or your opponent.</p>
         </article>
     </div>
+
+    <section class="panel faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Frequently asked questions</h2>
+        @foreach (var faq in Faqs)
+        {
+            <div class="faq-item">
+                <h3>@faq.Question</h3>
+                <p>@faq.Answer</p>
+            </div>
+        }
+        <p class="subtle">
+            Read the code, report issues or contribute on
+            <a href="@SeoInfo.RepositoryUrl" target="_blank" rel="noopener">GitHub</a>.
+        </p>
+    </section>
 </section>
 
 @code {
+    private sealed record Faq(string Question, string Answer);
+
+    private static readonly Faq[] Faqs =
+    {
+        new("Is this Battleship game free to play?",
+            "Yes. It is free, runs entirely in your web browser, and needs no download or sign-up."),
+        new("Can I play Battleship against the computer?",
+            "Yes. Choose Single player, pick easy, medium or hard, place your five ships, and fire at the AI's board. The AI only knows the results of its own shots."),
+        new("What is the difference between easy, medium and hard?",
+            "Easy fires at random untried cells. Medium hunts at random, then follows up on hits until the ship sinks. Hard counts every legal placement of the remaining fleet and fires at the most probable cell."),
+        new("How do I play Battleship online with a friend?",
+            "Choose Host a game to get a six-character room code, then share the join link or code. Your friend enters the code on the home page, both of you place your fleets and press Ready, and the host fires first."),
+        new("Which ships are in the fleet?",
+            "Five ships on a 10×10 board: Carrier (5 cells), Battleship (4), Cruiser (3), Submarine (3) and Patrol Boat (2)."),
+        new("Does a hit give me another turn?",
+            "No. Turns always alternate, whether the shot misses, hits or sinks a ship. Repeated or invalid shots are rejected and do not use your turn."),
+        new("Can my opponent or the server see where my ships are?",
+            "No. Your unhit ship positions stay in your browser. Only the result of each shot is shared."),
+        new("Does it work on phones and with a keyboard?",
+            "Yes. You can tap cells and ship cards on touch screens, drag ships with a mouse, or use the arrow keys, R to rotate, and Enter or Space to place and fire."),
+        new("Is the source code available?",
+            "Yes. Battleship is open source and written in C# with Blazor WebAssembly. The code is on GitHub at github.com/DocDBrown/BattleshipC-WebGame-.")
+    };
+
+    private static readonly string FaqJsonLd = SeoInfo.ToJsonLd(new JsonObject
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "FAQPage",
+        ["mainEntity"] = new JsonArray(Faqs.Select(f => (JsonNode?)new JsonObject
+        {
+            ["@type"] = "Question",
+            ["name"] = f.Question,
+            ["acceptedAnswer"] = new JsonObject
+            {
+                ["@type"] = "Answer",
+                ["text"] = f.Answer
+            }
+        }).ToArray())
+    });
+
     private void GoMenu() => Navigation.NavigateTo("/");
 }

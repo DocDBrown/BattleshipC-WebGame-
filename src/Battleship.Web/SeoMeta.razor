@@ -1,0 +1,40 @@
+@* SeoMeta.razor *@
+@inject NavigationManager Navigation
+
+<PageTitle>@Title</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@Description" />
+    <meta name="robots" content="@RobotsValue" />
+    <link rel="canonical" href="@CanonicalUrl" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="@SeoInfo.SiteName" />
+    <meta property="og:title" content="@Title" />
+    <meta property="og:description" content="@Description" />
+    <meta property="og:url" content="@CanonicalUrl" />
+    <meta property="og:image" content="@ImageUrl" />
+    <meta property="og:image:alt" content="@SeoInfo.ImageAlt" />
+    <meta property="og:locale" content="en_AU" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@Title" />
+    <meta name="twitter:description" content="@Description" />
+    <meta name="twitter:image" content="@ImageUrl" />
+    @if (!string.IsNullOrEmpty(JsonLd))
+    {
+        @((MarkupString)$"<script type=\"application/ld+json\">{JsonLd}</script>")
+    }
+</HeadContent>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = SeoInfo.SiteName;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter] public string Path { get; set; } = "/";
+    [Parameter] public bool NoIndex { get; set; }
+    [Parameter] public string? JsonLd { get; set; }
+
+    private string RobotsValue => NoIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1";
+
+    private string CanonicalUrl => SeoInfo.Absolute(Navigation.BaseUri, Path);
+
+    private string ImageUrl => SeoInfo.Absolute(Navigation.BaseUri, SeoInfo.ImagePath);
+}

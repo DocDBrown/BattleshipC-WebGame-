@@ -1,0 +1,30 @@
+# Battleship
+
+> Battleship is a free, open-source Battleship game that runs in the web browser, built with C# and Blazor WebAssembly. Play against an easy, medium or hard AI, or host a room and play a friend online using a six-character room code. No download or sign-up is needed.
+
+Key facts:
+
+- Board: 10×10 per player, five ships: Carrier (5), Battleship (4), Cruiser (3), Submarine (3), Patrol Boat (2).
+- Ships cannot overlap or extend off the board.
+- Turns always alternate; a miss, hit or sink passes the turn. Repeated or invalid shots are rejected and do not use a turn.
+- The first player to lose all five ships loses.
+- Easy AI fires at random untried cells. Medium AI hunts randomly, then targets around hits until the ship sinks. Hard AI enumerates legal placements of the remaining fleet and fires at the most probable cell. The AI never sees hidden ship positions.
+- Multiplayer: the host creates a room and shares a six-character code (letters A–H, J–N, P–Z and digits 2–9). Both players place fleets and press Ready; the host fires first. A chat box is available and never changes the turn.
+- Privacy: unhit ship positions stay in the player's browser and are never sent to the server or the opponent.
+- Controls: mouse click, touch tap, drag-and-drop ship cards, or keyboard (arrow keys, R to rotate, Enter or Space to act).
+
+## Pages
+
+- [Home](https://YOUR_DOMAIN/): Start single player, host a multiplayer room, or join with a room code.
+- [Single player](https://YOUR_DOMAIN/single): Choose easy, medium or hard and play against the AI.
+- [How to play](https://YOUR_DOMAIN/help): Rules, controls, AI difficulty explained, multiplayer steps and FAQ.
+
+## Source code
+
+- [GitHub repository](https://github.com/DocDBrown/BattleshipC-WebGame-): Full C# source (Blazor WebAssembly client, ASP.NET Core WebSocket relay server, shared game logic), licence and readme.
+
+## Optional
+
+- [Play vs easy AI](https://YOUR_DOMAIN/single/easy)
+- [Play vs medium AI](https://YOUR_DOMAIN/single/medium)
+- [Play vs hard AI](https://YOUR_DOMAIN/single/hard)

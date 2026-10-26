@@ -1,6 +1,10 @@
+@* JoinGame.razor *@
 @page "/join/{RoomCode}"
 
-<PageTitle>Join a game</PageTitle>
+<SeoMeta Title="Join a Battleship Game — Battleship"
+         Description="Join a friend's Battleship room with a six-character code."
+         Path="/"
+         NoIndex="true" />
 
 <MultiplayerGame IsHost="false" RoomCode="@RoomCode" />
 

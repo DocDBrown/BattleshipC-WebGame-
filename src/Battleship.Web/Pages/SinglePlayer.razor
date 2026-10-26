@@ -4,19 +4,27 @@
 @inject IConfiguration Configuration
 @implements IAsyncDisposable
 
-<PageTitle>Battleship — @_difficulty</PageTitle>
+<SeoMeta Title="@($"Battleship vs {DifficultyLabel} AI — Play Free")"
+         Description="@PageDescription"
+         Path="@SinglePlayerPath"
+         NoIndex="true" />
 
-<section class="page">
+<section class="page game-page">
     <header class="page-header">
         <div>
-            <p class="eyebrow">Single player</p>
-            <h1>Your command</h1>
+            <p class="eyebrow">Single player · versus AI</p>
+            <h1>@PageHeading</h1>
             <p class="subtle">
-                Difficulty:
-                <span class="badge" data-difficulty="@_difficulty">@_difficulty</span>
+                Difficulty
+                <span class="badge" data-difficulty="@_difficulty">@DifficultyLabel</span>
+                @if (_phase == Phase.Setup)
+                {
+                    <span> · Place all five ships to begin.</span>
+                }
             </p>
         </div>
         <div class="header-actions">
+            <button class="btn ghost" type="button" @onclick="ChangeDifficulty">Change difficulty</button>
             <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
         </div>
     </header>
@@ -34,17 +42,25 @@
     }
     else if (_phase == Phase.Setup)
     {
-        <div class="panel">
-            <h2>Place your fleet</h2>
-            <p class="subtle">
-                Manual placement: click or tap a cell to place the first unplaced ship, drag a ship
-                card onto a cell, use the arrow keys and <kbd>R</kbd> to rotate, or choose automatic placement.
-            </p>
+        <div class="panel setup-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Place your fleet</h2>
+                    <p class="subtle">
+                        Select a ship, then click or tap a cell. Drag a ship card for precise placement,
+                        or let the chart room deploy the fleet automatically.
+                    </p>
+                </div>
+                <span class="fleet-progress">@_humanBoard.Ships.Count / @Fleet.Ships.Count deployed</span>
+            </div>
+
             <PlacementPanel @key="_gameKey" Board="_humanBoard" OnChanged="OnPlacementChanged" />
+
             @if (_placementMessage is not null)
             {
-                <p class="notice">@_placementMessage</p>
+                <p class="notice" role="status">@_placementMessage</p>
             }
+
             <div class="actions">
                 <button class="btn primary"
                         type="button"
@@ -52,48 +68,68 @@
                         @onclick="StartBattle">
                     Start battle
                 </button>
-                <button class="btn" type="button" @onclick="ChangeDifficulty">Change difficulty</button>
-                <button class="btn ghost" type="button" @onclick="GoMenu">Menu</button>
+                <a class="btn ghost" href="help">How to play</a>
             </div>
         </div>
     }
     else
     {
-        <div class="status-row">
-            <span class="badge">@TurnText</span>
+        <div class="status-bar">
+            <div class="turn-indicator @TurnClass" role="status" aria-live="polite">
+                <span class="turn-dot" aria-hidden="true"></span>
+                <strong>@TurnText</strong>
+            </div>
             @if (!string.IsNullOrEmpty(_lastOutcome))
             {
-                <span class="notice" role="status">@_lastOutcome</span>
+                <span class="notice">@_lastOutcome</span>
             }
         </div>
 
         <div class="boards">
             <div class="board-panel">
-                <h2>Your waters</h2>
+                <div class="board-heading">
+                    <h2>Your waters</h2>
+                    <span class="board-stat">@OwnShipsAfloat afloat · @ShipsSunk(_humanBoard) sunk</span>
+                </div>
                 <BoardGrid Cells="@BoardView.Own(_humanBoard)"
                            Interactive="false"
                            Label="Your board" />
                 <FleetStatus Ships="_humanBoard.Ships" Title="Your fleet" />
             </div>
-            <div class="board-panel">
-                <h2>Enemy waters</h2>
+            <div class="board-panel target-panel">
+                <div class="board-heading">
+                    <h2>Enemy waters</h2>
+                    <span class="board-stat">@EnemyShipsAfloat afloat · @ShipsSunk(_aiBoard) sunk</span>
+                </div>
                 <BoardGrid Cells="@BoardView.Target(_target)"
                            Interactive="@(_phase == Phase.Combat && _humanTurn && !_busy)"
                            Label="Enemy targeting board"
                            OnActivate="FireAsync" />
+                <div class="board-meta" aria-label="Your battle statistics">
+                    <span>Shots <strong>@ShotsFired</strong></span>
+                    <span>Hits <strong>@HitsLanded</strong></span>
+                    <span>Accuracy <strong>@AccuracyPercent%</strong></span>
+                </div>
                 <FleetStatus Ships="_aiBoard.Ships" Title="Enemy fleet" />
             </div>
         </div>
 
+        <div class="board-legend" aria-label="Board legend">
+            <span><i class="legend-swatch ship"></i>Ship</span>
+            <span><i class="legend-swatch hit"></i>Hit</span>
+            <span><i class="legend-swatch miss"></i>Miss</span>
+            <span><i class="legend-swatch sunk"></i>Sunk</span>
+        </div>
+
         @if (_phase == Phase.Over)
         {
-            <div class="panel game-over" role="status">
+            <div class="panel game-over" role="status" aria-live="polite">
                 <p class="eyebrow">Game over</p>
                 <h2>@WinnerTitle</h2>
+                <p>@ResultText</p>
                 <p class="subtle">
-                    Difficulty played: <span class="badge">@_difficulty</span>
+                    @ShotsFired shots · @HitsLanded hits · @AccuracyPercent% accuracy against the @DifficultyLabel AI.
                 </p>
-                <p>@_lastOutcome</p>
                 <div class="actions">
                     <button class="btn primary" type="button" @onclick="Rematch">Rematch</button>
                     <button class="btn" type="button" @onclick="ChangeDifficulty">Change difficulty</button>
@@ -138,6 +174,26 @@
 
     [Parameter] public string? Difficulty { get; set; }
 
+    private string DifficultyLabel => _difficulty switch
+    {
+        "easy" => "Easy",
+        "hard" => "Hard",
+        _ => "Medium"
+    };
+
+    private string PageHeading => _phase switch
+    {
+        Phase.Setup => "Deploy your fleet",
+        Phase.Over => "Game over",
+        Phase.Error => "Something went wrong",
+        _ => "Battle stations"
+    };
+
+    private string SinglePlayerPath => $"/single/{_difficulty}";
+
+    private string PageDescription =>
+        $"Play Battleship against the {DifficultyLabel} AI. Place your fleet and fire at enemy waters in this free browser game.";
+
     private string TurnText => _phase switch
     {
         Phase.Over => "Game over",
@@ -147,7 +203,25 @@
         _ => "Waiting for the AI"
     };
 
-    private string WinnerTitle => _winner == Side.Self ? "You win!" : "The AI wins";
+    private string TurnClass => _aiThinking ? "thinking" : _humanTurn ? "ready" : "waiting";
+
+    private string WinnerTitle => _winner == Side.Self ? "Victory — enemy fleet destroyed" : "Defeat — your fleet was destroyed";
+
+    private string ResultText => _winner == Side.Self
+        ? "Every enemy ship is at the bottom of the sea. Well fought, Admiral."
+        : "The enemy found your fleet. Change course and try again.";
+
+    private int ShotsFired => _target.Shots.Count;
+
+    private int HitsLanded => _target.Shots.Values.Count(outcome => outcome is not ShotOutcome.MISS);
+
+    private int AccuracyPercent => ShotsFired == 0 ? 0 : (int)Math.Round(HitsLanded * 100d / ShotsFired);
+
+    private int EnemyShipsAfloat => _aiBoard.Ships.Count(ship => !ship.IsSunk);
+
+    private int OwnShipsAfloat => _humanBoard.Ships.Count(ship => !ship.IsSunk);
+
+    private static int ShipsSunk(Board board) => board.Ships.Count(ship => ship.IsSunk);
 
     protected override void OnParametersSet()
     {

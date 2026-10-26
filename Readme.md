@@ -26,7 +26,6 @@ WebSockets. A single-player mode runs entirely in the browser against a local AI
 .
 ├── Battleship.sln
 ├── Dockerfile
-├── docker-compose.yml
 ├── src
 │   ├── Battleship.Shared          # Protocol records, validation helpers, board coordinates
 │   ├── Battleship.Server          # ASP.NET Core host, room API, WebSocket relay, reaper
@@ -38,10 +37,11 @@ The server project references the web project so that a local build can serve th
 Blazor framework files directly. The Docker build publishes the web project separately
 and copies its generated `wwwroot` into the server image.
 
-## Quick Start (Docker Compose)
+## Quick Start (Docker)
 
 ```bash
-docker compose up --build
+docker build -t battleship .
+docker run --rm -p 8080:8080 battleship
 ```
 
 Open <http://localhost:8080>.
@@ -55,13 +55,14 @@ TLS in front of the container and forward both HTTP and WebSocket upgrade reques
 dotnet run --project src/Battleship.Server
 ```
 
-Open <http://localhost:8080>. The server hosts both the API and the Blazor
-application. The application is browser-only after the initial load; single-player
-games do not make network requests.
+Open <http://localhost:8080>. The default launch profile runs the server in
+Development mode so it can serve the referenced Blazor project's static web assets.
+The server hosts both the API and the Blazor application. The application is
+browser-only after the initial load; single-player games do not make network requests.
 
 ## How to Play
 
-1. Open **Single player**, choose a difficulty, and place your fleet.
+1. Open **Single player**, choose a difficulty on `/single`, and place your fleet.
 2. Click or tap a cell to place the first unplaced ship, drag a ship card onto the
    board, or use automatic placement.
 3. Select **Start battle** and click or tap enemy cells to fire.

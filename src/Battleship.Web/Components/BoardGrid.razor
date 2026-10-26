@@ -1,24 +1,46 @@
 @inject IJSRuntime JS
 
 <div class="board-frame">
-    <div class="board" role="grid" aria-label="@Label" @onkeydown="HandleKeyDown">
-        @foreach (var cell in Cells)
-        {
-            <button type="button"
-                    id="@CellId(cell.Coordinate)"
-                    class="cell @StateClass(cell.State) @(cell.Coordinate == Cursor ? "cursor" : string.Empty)"
-                    role="gridcell"
-                    aria-label="@AriaLabel(cell)"
-                    disabled="@(!Interactive)"
-                    @onclick="() => ActivateAsync(cell)"
-                    @onfocus="() => Cursor = cell.Coordinate"
-                    @ondrop="() => DropAsync(cell)"
-                    @ondrop:preventDefault
-                    @ondragover:preventDefault
-                    @ondragstart:preventDefault>
-                <span class="cell-glyph" aria-hidden="true">@Glyph(cell.State)</span>
-            </button>
-        }
+    <div class="board-layout">
+        <span class="board-corner" aria-hidden="true"></span>
+        <div class="board-axis board-axis-cols" aria-hidden="true">
+            @for (var col = 1; col <= BoardCoords.Size; col++)
+            {
+                <span>@col</span>
+            }
+        </div>
+        <div class="board-axis board-axis-rows" aria-hidden="true">
+            @for (var row = 0; row < BoardCoords.Size; row++)
+            {
+                <span>@((char)('A' + row))</span>
+            }
+        </div>
+        <div class="board"
+             role="grid"
+             aria-label="@Label"
+             aria-rowcount="@BoardCoords.Size"
+             aria-colcount="@BoardCoords.Size"
+             @onkeydown="HandleKeyDown">
+            @foreach (var cell in Cells)
+            {
+                <button type="button"
+                        id="@CellId(cell.Coordinate)"
+                        class="cell @StateClass(cell.State) @(cell.Coordinate == Cursor ? "cursor" : string.Empty)"
+                        role="gridcell"
+                        title="@AriaLabel(cell)"
+                        aria-label="@AriaLabel(cell)"
+                        data-coordinate="@cell.Coordinate.Label"
+                        disabled="@(!Interactive)"
+                        @onclick="() => ActivateAsync(cell)"
+                        @onfocus="() => Cursor = cell.Coordinate"
+                        @ondrop="() => DropAsync(cell)"
+                        @ondrop:preventDefault
+                        @ondragover:preventDefault
+                        @ondragstart:preventDefault>
+                    <span class="cell-glyph" aria-hidden="true">@Glyph(cell.State)</span>
+                </button>
+            }
+        </div>
     </div>
 </div>
 

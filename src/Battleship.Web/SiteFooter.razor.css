@@ -1,0 +1,39 @@
+/* SiteFooter.razor.css */
+.site-footer {
+    margin-top: 3rem;
+    padding: 1.5rem 1rem 2rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.site-footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem 1.5rem;
+}
+
+.site-footer-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: inherit;
+    opacity: 0.85;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.site-footer-nav a:hover,
+.site-footer-nav a:focus-visible {
+    opacity: 1;
+}
+
+.site-footer-icon {
+    flex-shrink: 0;
+}
+
+.site-footer-copy {
+    margin: 0.75rem 0 0;
+    opacity: 0.7;
+}

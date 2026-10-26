@@ -1,0 +1,9 @@
+# robots.txt
+User-agent: *
+Allow: /
+Disallow: /host
+Disallow: /join/
+Disallow: /api/
+Disallow: /ws
+
+Sitemap: https://YOUR_DOMAIN/sitemap.xml
