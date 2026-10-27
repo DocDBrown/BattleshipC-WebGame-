@@ -1,0 +1,21 @@
+# compose.yml
+name: battleship
+
+services:
+  battleship:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: battleship:latest
+    container_name: battleship
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

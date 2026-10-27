@@ -1,0 +1,154 @@
+# .github/workflows/ci.yml
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  IMAGE_NAME: battleship
+  DOTNET_VERSION: "10.0.x"
+  SOLUTION: Battleship.sln
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION="8.21.2"
+          echo "Installing gitleaks v${GITLEAKS_VERSION}"
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks version
+
+      - name: Run gitleaks scan
+        run: |
+          echo "Running gitleaks secret scan over full history"
+          gitleaks detect \
+            --source . \
+            --redact \
+            --verbose
+
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: |
+          echo "Restoring ${SOLUTION}"
+          dotnet restore "${SOLUTION}"
+
+      - name: Check formatting
+        run: |
+          echo "Verifying code formatting for ${SOLUTION}"
+          dotnet format "${SOLUTION}" --verify-no-changes --no-restore --verbosity diagnostic
+
+      - name: Build
+        run: |
+          echo "Building ${SOLUTION} in Release with warnings as errors"
+          dotnet build "${SOLUTION}" -c Release --no-restore -warnaserror
+
+      - name: Run tests
+        run: |
+          echo "Running tests for ${SOLUTION}"
+          dotnet test "${SOLUTION}" -c Release --no-build --verbosity normal
+
+      - name: Verify container build
+        run: |
+          echo "Verifying Dockerfile builds"
+          docker build -t "${IMAGE_NAME}:ci" .
+
+  build-and-deploy:
+    needs: [gitleaks, ci]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker \
+            ${{ secrets.GAR_LOCATION }}-docker.pkg.dev
+
+      - name: Compute image tag (DDMMYYYY)
+        id: imgtag
+        run: |
+          DATE_TAG=$(TZ="Australia/Sydney" date +'%d%m%Y')
+          echo "Computed date tag: ${DATE_TAG}"
+          echo "date_tag=${DATE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        run: |
+          IMAGE="${{ secrets.GAR_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${IMAGE_NAME}"
+          echo "Building image: $IMAGE:${{ steps.imgtag.outputs.date_tag }}"
+          docker build \
+            -t "$IMAGE:${{ steps.imgtag.outputs.date_tag }}" \
+            -t "$IMAGE:latest" \
+            .
+
+      - name: Push image
+        run: |
+          IMAGE="${{ secrets.GAR_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${IMAGE_NAME}"
+          echo "Pushing image: $IMAGE"
+          docker push "$IMAGE:${{ steps.imgtag.outputs.date_tag }}"
+          docker push "$IMAGE:latest"
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE="${{ secrets.GAR_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${IMAGE_NAME}:${{ steps.imgtag.outputs.date_tag }}"
+          echo "Deploying image to Cloud Run: $IMAGE"
+          gcloud run deploy "${{ secrets.CLOUD_RUN_SERVICE }}" \
+            --image "$IMAGE" \
+            --region "${{ secrets.CLOUD_RUN_REGION }}" \
+            --platform managed \
+            --port 8080 \
+            --allow-unauthenticated \
+            --ingress internal-and-cloud-load-balancing \
+            --session-affinity \
+            --timeout 3600 \
+            --set-env-vars "ASPNETCORE_ENVIRONMENT=Production" \
+            --quiet
