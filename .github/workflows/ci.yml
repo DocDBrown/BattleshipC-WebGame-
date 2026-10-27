@@ -147,8 +147,7 @@ jobs:
             --platform managed \
             --port 8080 \
             --allow-unauthenticated \
-            --ingress internal-and-cloud-load-balancing \
+            --ingress all \
             --session-affinity \
             --timeout 3600 \
             --set-env-vars "ASPNETCORE_ENVIRONMENT=Production" \
-            --quiet
