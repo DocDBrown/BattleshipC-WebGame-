@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "foundbooked"
+  },
+  "targets": {
+    "foundbooked": {
+      "hosting": {
+        "battleship": [
+          "battleship-game"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
