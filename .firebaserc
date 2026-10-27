@@ -5,11 +5,8 @@
   "targets": {
     "foundbooked": {
       "hosting": {
-        "battleship": [
-          "battleship-game"
-        ]
+        "battleship": ["battleship-web"]
       }
     }
-  },
-  "etags": {}
+  }
 }
