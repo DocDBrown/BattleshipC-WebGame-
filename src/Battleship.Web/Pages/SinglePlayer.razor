@@ -246,7 +246,7 @@
     private void StartNewGame()
     {
         _gameId++;
-        _random = _options.AiSeed is int seed ? new Random(seed) : new Random();
+        _random = CreateRandom();
         _humanBoard = new Board();
         _aiBoard = new Board();
         _target = new TargetBoard();
@@ -274,6 +274,9 @@
     }
 
     private void OnPlacementChanged() => StateHasChanged();
+
+    protected virtual Random CreateRandom() =>
+        _options.AiSeed is int seed ? new Random(seed) : new Random();
 
     private void StartBattle()
     {

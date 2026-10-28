@@ -1,0 +1,1342 @@
+{
+  "schema_version": 1,
+  "mode": "source",
+  "project_path": "/Users/duncanbrown/Desktop/DxRs/BattleshipC-WebGame-",
+  "content_included": true,
+  "summary": {
+    "files": 53,
+    "source_files": 48,
+    "metadata_files": 5,
+    "dependencies": 241,
+    "cycles": 1,
+    "languages": {
+      "csharp": 47,
+      "javascript": 1
+    }
+  },
+  "entry_points": [
+    "src/Battleship.Web/Program.cs",
+    "src/Battleship.Server/Program.cs"
+  ],
+  "graph_roots": [
+    "src/Battleship.Web/Logging/AppLogger.cs",
+    "src/Battleship.Web/wwwroot/js/app.js",
+    "src/Battleship.Web/Security/ChatSanitizer.cs",
+    "src/Battleship.Web/Program.cs",
+    "src/Battleship.Web/Session/MultiplayerSession.cs",
+    "src/Battleship.Web/Ai/AiStrategyFactory.cs",
+    "src/Battleship.Server/Program.cs"
+  ],
+  "order": [
+    "Battleship.sln",
+    "Directory.Build.props",
+    "src/Battleship.Server/Battleship.Server.csproj",
+    "src/Battleship.Shared/Battleship.Shared.csproj",
+    "src/Battleship.Web/Battleship.Web.csproj",
+    "src/Battleship.Server/Hosting/HttpProblem.cs",
+    "src/Battleship.Server/Hosting/SecurityHeadersMiddleware.cs",
+    "src/Battleship.Server/Hosting/StaticContent.cs",
+    "src/Battleship.Server/Options/BattleshipOptions.cs",
+    "src/Battleship.Server/RateLimiting/IpRateLimiter.cs",
+    "src/Battleship.Server/RateLimiting/TokenBucket.cs",
+    "src/Battleship.Server/Realtime/Outbound.cs",
+    "src/Battleship.Shared/ProtocolInfo.cs",
+    "src/Battleship.Web/Logging/AppLogger.cs",
+    "src/Battleship.Web/Net/ApiResult.cs",
+    "src/Battleship.Web/Net/GameOptions.cs",
+    "src/Battleship.Web/Net/WsFrame.cs",
+    "src/Battleship.Web/SeoInfo.cs",
+    "src/Battleship.Web/wwwroot/js/app.js",
+    "src/Battleship.Server/Options/OptionsProvider.cs",
+    "src/Battleship.Shared/BoardCoords.cs",
+    "src/Battleship.Shared/ProtocolMessage.cs",
+    "src/Battleship.Web/Net/RoomApiClient.cs",
+    "src/Battleship.Shared/ProtocolCodec.cs",
+    "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+    "src/Battleship.Web/Game/Coordinate.cs",
+    "src/Battleship.Web/Game/ShipDefinition.cs",
+    "src/Battleship.Web/Net/WsTransport.cs",
+    "src/Battleship.Web/Security/ChatSanitizer.cs",
+    "src/Battleship.Web/Game/Ship.cs",
+    "src/Battleship.Web/Game/TargetBoard.cs",
+    "src/Battleship.Web/Program.cs",
+    "src/Battleship.Web/Game/Board.cs",
+    "src/Battleship.Web/Game/CellView.cs",
+    "src/Battleship.Web/Game/ShotResult.cs",
+    "src/Battleship.Web/Game/BoardView.cs",
+    "src/Battleship.Web/Game/ShotResolver.cs",
+    "src/Battleship.Web/Ai/AiView.cs",
+    "src/Battleship.Web/Session/MultiplayerSession.cs",
+    "src/Battleship.Web/Ai/AiRandom.cs",
+    "src/Battleship.Web/Ai/IAiStrategy.cs",
+    "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+    "src/Battleship.Web/Ai/HardAiStrategy.cs",
+    "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+    "src/Battleship.Web/Ai/AiStrategyFactory.cs",
+    "src/Battleship.Server/Api/RoomApi.cs",
+    "src/Battleship.Server/Background/RoomReaper.cs",
+    "src/Battleship.Server/Program.cs",
+    "src/Battleship.Server/Realtime/MessageRelay.cs",
+    "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+    "src/Battleship.Server/Rooms/Participant.cs",
+    "src/Battleship.Server/Rooms/Room.cs",
+    "src/Battleship.Server/Rooms/RoomRegistry.cs"
+  ],
+  "cycles": [
+    [
+      "src/Battleship.Server/Realtime/MessageRelay.cs",
+      "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+      "src/Battleship.Server/Rooms/Participant.cs",
+      "src/Battleship.Server/Rooms/Room.cs",
+      "src/Battleship.Server/Rooms/RoomRegistry.cs"
+    ]
+  ],
+  "nodes": [
+    {
+      "path": "Battleship.sln",
+      "language": null,
+      "kind": "metadata",
+      "role": "metadata",
+      "depth": 0,
+      "bytes": 2003,
+      "lines": 33,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "Microsoft Visual Studio Solution File, Format Version 12.00\n# Visual Studio Version 17\nVisualStudioVersion = 17.8.34330.188\nMinimumVisualStudioVersion = 10.0.40219.1\nProject(\"{9A19103F-16F7-4668-BE54-9A1E7A4F7556}\") = \"Battleship.Shared\", \"src\\Battleship.Shared\\Battleship.Shared.csproj\", \"{11111111-1111-4111-8111-111111111111}\"\nEndProject\nProject(\"{9A19103F-16F7-4668-BE54-9A1E7A4F7556}\") = \"Battleship.Server\", \"src\\Battleship.Server\\Battleship.Server.csproj\", \"{22222222-2222-4222-8222-222222222222}\"\nEndProject\nProject(\"{9A19103F-16F7-4668-BE54-9A1E7A4F7556}\") = \"Battleship.Web\", \"src\\Battleship.Web\\Battleship.Web.csproj\", \"{33333333-3333-4333-8333-333333333333}\"\nEndProject\nGlobal\n\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n\t\tDebug|Any CPU = Debug|Any CPU\n\t\tRelease|Any CPU = Release|Any CPU\n\tEndGlobalSection\n\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n\t\t{11111111-1111-4111-8111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU\n\t\t{11111111-1111-4111-8111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU\n\t\t{11111111-1111-4111-8111-111111111111}.Release|Any CPU.ActiveCfg = Release|Any CPU\n\t\t{11111111-1111-4111-8111-111111111111}.Release|Any CPU.Build.0 = Release|Any CPU\n\t\t{22222222-2222-4222-8222-222222222222}.Debug|Any CPU.ActiveCfg = Debug|Any CPU\n\t\t{22222222-2222-4222-8222-222222222222}.Debug|Any CPU.Build.0 = Debug|Any CPU\n\t\t{22222222-2222-4222-8222-222222222222}.Release|Any CPU.ActiveCfg = Release|Any CPU\n\t\t{22222222-2222-4222-8222-222222222222}.Release|Any CPU.Build.0 = Release|Any CPU\n\t\t{33333333-3333-4333-8333-333333333333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU\n\t\t{33333333-3333-4333-8333-333333333333}.Debug|Any CPU.Build.0 = Debug|Any CPU\n\t\t{33333333-3333-4333-8333-333333333333}.Release|Any CPU.ActiveCfg = Release|Any CPU\n\t\t{33333333-3333-4333-8333-333333333333}.Release|Any CPU.Build.0 = Release|Any CPU\n\tEndGlobalSection\n\tGlobalSection(SolutionProperties) = preSolution\n\t\tHideSolutionNode = FALSE\n\tEndGlobalSection\nEndGlobal\n"
+    },
+    {
+      "path": "Directory.Build.props",
+      "language": null,
+      "kind": "metadata",
+      "role": "metadata",
+      "depth": 0,
+      "bytes": 208,
+      "lines": 8,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "<Project>\n  <PropertyGroup>\n    <LangVersion>14</LangVersion>\n    <Nullable>enable</Nullable>\n    <ImplicitUsings>enable</ImplicitUsings>\n    <Deterministic>true</Deterministic>\n  </PropertyGroup>\n</Project>\n"
+    },
+    {
+      "path": "src/Battleship.Server/Battleship.Server.csproj",
+      "language": null,
+      "kind": "metadata",
+      "role": "metadata",
+      "depth": 0,
+      "bytes": 555,
+      "lines": 14,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "<Project Sdk=\"Microsoft.NET.Sdk.Web\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <RootNamespace>Battleship.Server</RootNamespace>\n    <AssemblyName>Battleship.Server</AssemblyName>\n  </PropertyGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"..\\Battleship.Shared\\Battleship.Shared.csproj\" />\n    <ProjectReference Include=\"..\\Battleship.Web\\Battleship.Web.csproj\" />\n  </ItemGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Microsoft.AspNetCore.Components.WebAssembly.Server\" Version=\"10.0.13\" />\n  </ItemGroup>\n</Project>\n"
+    },
+    {
+      "path": "src/Battleship.Shared/Battleship.Shared.csproj",
+      "language": null,
+      "kind": "metadata",
+      "role": "metadata",
+      "depth": 0,
+      "bytes": 182,
+      "lines": 6,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <RootNamespace>Battleship.Shared</RootNamespace>\n  </PropertyGroup>\n</Project>\n"
+    },
+    {
+      "path": "src/Battleship.Web/Battleship.Web.csproj",
+      "language": null,
+      "kind": "metadata",
+      "role": "metadata",
+      "depth": 0,
+      "bytes": 628,
+      "lines": 12,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "<Project Sdk=\"Microsoft.NET.Sdk.BlazorWebAssembly\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <RootNamespace>Battleship.Web</RootNamespace>\n    <BlazorWebAssemblyLoadAllGlobalizationData>false</BlazorWebAssemblyLoadAllGlobalizationData>\n  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Microsoft.AspNetCore.Components.WebAssembly\" Version=\"10.0.13\" />\n    <PackageReference Include=\"Microsoft.AspNetCore.Components.WebAssembly.DevServer\" Version=\"10.0.13\" PrivateAssets=\"all\" />\n    <ProjectReference Include=\"..\\Battleship.Shared\\Battleship.Shared.csproj\" />\n  </ItemGroup>\n</Project>\n"
+    },
+    {
+      "path": "src/Battleship.Server/Hosting/HttpProblem.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 543,
+      "lines": 20,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Text.Json;\n\nnamespace Battleship.Server.Hosting;\n\npublic static class HttpProblem\n{\n    public static async Task WriteAsync(HttpContext context, int status, string title, string detail)\n    {\n        context.Response.StatusCode = status;\n        context.Response.ContentType = \"application/problem+json\";\n        var payload = JsonSerializer.Serialize(new\n        {\n            type = \"about:blank\",\n            title,\n            status,\n            detail\n        });\n        await context.Response.WriteAsync(payload);\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Hosting/SecurityHeadersMiddleware.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 1094,
+      "lines": 34,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Server.Hosting;\n\npublic sealed class SecurityHeadersMiddleware\n{\n    private const string ContentSecurityPolicy =\n        \"default-src 'self'; \" +\n        \"script-src 'self' 'wasm-unsafe-eval'; \" +\n        \"style-src 'self' 'unsafe-inline'; \" +\n        \"img-src 'self' data:; \" +\n        \"font-src 'self' data:; \" +\n        \"connect-src 'self' ws: wss:; \" +\n        \"object-src 'none'; \" +\n        \"base-uri 'self'; \" +\n        \"form-action 'self'; \" +\n        \"frame-ancestors 'none'\";\n\n    private readonly RequestDelegate _next;\n\n    public SecurityHeadersMiddleware(RequestDelegate next)\n    {\n        _next = next;\n    }\n\n    public Task InvokeAsync(HttpContext context)\n    {\n        var headers = context.Response.Headers;\n        headers[\"Content-Security-Policy\"] = ContentSecurityPolicy;\n        headers[\"X-Content-Type-Options\"] = \"nosniff\";\n        headers[\"X-Frame-Options\"] = \"DENY\";\n        headers[\"Referrer-Policy\"] = \"no-referrer\";\n        headers[\"Permissions-Policy\"] = \"camera=(), microphone=(), geolocation=()\";\n        return _next(context);\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Hosting/StaticContent.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 2575,
+      "lines": 63,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": false,
+      "content": "using Microsoft.AspNetCore.StaticFiles;\n\nnamespace Battleship.Server.Hosting;\n\npublic static class StaticContent\n{\n    public static readonly FileExtensionContentTypeProvider Types = CreateProvider();\n\n    public static void Prepare(StaticFileResponseContext context)\n    {\n        var path = context.Context.Request.Path.Value ?? string.Empty;\n        var headers = context.Context.Response.Headers;\n\n        if (path.EndsWith(\"index.html\", StringComparison.OrdinalIgnoreCase)\n            || path.EndsWith(\"appsettings.json\", StringComparison.OrdinalIgnoreCase)\n            || path.EndsWith(\"Battleship.Web.styles.css\", StringComparison.OrdinalIgnoreCase)\n            || path.EndsWith(\"blazor.webassembly.js\", StringComparison.OrdinalIgnoreCase)\n            || path.EndsWith(\"/dotnet.js\", StringComparison.OrdinalIgnoreCase))\n        {\n            headers[\"Cache-Control\"] = \"no-cache, no-store, must-revalidate\";\n            headers[\"Pragma\"] = \"no-cache\";\n            headers[\"Expires\"] = \"0\";\n            return;\n        }\n\n        if (path.StartsWith(\"/_framework\", StringComparison.OrdinalIgnoreCase))\n        {\n            headers[\"Cache-Control\"] = \"public, max-age=31536000, immutable\";\n            return;\n        }\n\n        headers[\"Cache-Control\"] = \"public, max-age=300\";\n    }\n\n    public static async Task WriteIndexAsync(HttpContext context, IWebHostEnvironment environment)\n    {\n        var index = environment.WebRootFileProvider.GetFileInfo(\"index.html\");\n        if (!index.Exists || index.IsDirectory)\n        {\n            context.Response.StatusCode = StatusCodes.Status404NotFound;\n            return;\n        }\n\n        context.Response.StatusCode = StatusCodes.Status200OK;\n        context.Response.ContentType = \"text/html; charset=utf-8\";\n        context.Response.Headers[\"Cache-Control\"] = \"no-cache, no-store, must-revalidate\";\n        context.Response.Headers[\"Pragma\"] = \"no-cache\";\n        context.Response.Headers[\"Expires\"] = \"0\";\n        await context.Response.SendFileAsync(index);\n    }\n\n    private static FileExtensionContentTypeProvider CreateProvider()\n    {\n        var provider = new FileExtensionContentTypeProvider();\n        provider.Mappings[\".wasm\"] = \"application/wasm\";\n        provider.Mappings[\".dat\"] = \"application/octet-stream\";\n        provider.Mappings[\".blat\"] = \"application/octet-stream\";\n        provider.Mappings[\".webmanifest\"] = \"application/manifest+json\";\n        provider.Mappings[\".br\"] = \"application/octet-stream\";\n        provider.Mappings[\".gz\"] = \"application/gzip\";\n        return provider;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Options/BattleshipOptions.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 1484,
+      "lines": 33,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Options/OptionsProvider.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Server.Options;\n\npublic sealed class BattleshipOptions\n{\n    public const string SectionName = \"Battleship\";\n\n    public int MaxRooms { get; set; } = 500;\n    public int RoomCodeAttempts { get; set; } = 64;\n    public int CreateRoomPermitsPerMinute { get; set; } = 30;\n    public int ConnectPermitsPerMinute { get; set; } = 120;\n    public int KeepAliveSeconds { get; set; } = 30;\n    public int SendTimeoutSeconds { get; set; } = 5;\n    public int MessagesPerSecond { get; set; } = 10;\n    public int MessageBurst { get; set; } = 20;\n    public int ReaperIntervalSeconds { get; set; } = 30;\n    public int RoomIdleTimeoutSeconds { get; set; } = 120;\n    public int RoomMaxLifetimeMinutes { get; set; } = 60;\n\n    public BattleshipOptions Normalized() => new()\n    {\n        MaxRooms = Math.Max(1, MaxRooms),\n        RoomCodeAttempts = Math.Max(1, RoomCodeAttempts),\n        CreateRoomPermitsPerMinute = Math.Max(1, CreateRoomPermitsPerMinute),\n        ConnectPermitsPerMinute = Math.Max(1, ConnectPermitsPerMinute),\n        KeepAliveSeconds = Math.Max(1, KeepAliveSeconds),\n        SendTimeoutSeconds = Math.Max(1, SendTimeoutSeconds),\n        MessagesPerSecond = Math.Max(1, MessagesPerSecond),\n        MessageBurst = Math.Max(1, MessageBurst),\n        ReaperIntervalSeconds = Math.Max(1, ReaperIntervalSeconds),\n        RoomIdleTimeoutSeconds = Math.Max(1, RoomIdleTimeoutSeconds),\n        RoomMaxLifetimeMinutes = Math.Max(1, RoomMaxLifetimeMinutes)\n    };\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/RateLimiting/IpRateLimiter.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 1937,
+      "lines": 71,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Participant.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Collections.Concurrent;\nusing Microsoft.AspNetCore.Http;\n\nnamespace Battleship.Server.RateLimiting;\n\npublic sealed class IpRateLimiter\n{\n    private sealed class Window\n    {\n        public DateTimeOffset StartedAt { get; set; }\n        public int Count { get; set; }\n        public DateTimeOffset LastSeen { get; set; }\n    }\n\n    private readonly ConcurrentDictionary<string, Window> _windows = new(StringComparer.Ordinal);\n\n    public bool TryAcquire(HttpContext context, string scope, int permitsPerMinute)\n    {\n        return TryAcquire(scope, ClientKey(context), permitsPerMinute);\n    }\n\n    public bool TryAcquire(string scope, string key, int permitsPerMinute)\n    {\n        if (permitsPerMinute <= 0)\n        {\n            return false;\n        }\n\n        var bucketKey = $\"{scope}:{key}\";\n        var now = DateTimeOffset.UtcNow;\n        var window = _windows.GetOrAdd(bucketKey, _ => new Window { StartedAt = now, LastSeen = now });\n        lock (window)\n        {\n            if (now - window.StartedAt >= TimeSpan.FromMinutes(1))\n            {\n                window.StartedAt = now;\n                window.Count = 0;\n            }\n\n            window.LastSeen = now;\n            if (window.Count >= permitsPerMinute)\n            {\n                return false;\n            }\n\n            window.Count++;\n            return true;\n        }\n    }\n\n    public void Cleanup(TimeSpan olderThan)\n    {\n        var cutoff = DateTimeOffset.UtcNow - olderThan;\n        foreach (var pair in _windows)\n        {\n            DateTimeOffset lastSeen;\n            lock (pair.Value)\n            {\n                lastSeen = pair.Value.LastSeen;\n            }\n\n            if (lastSeen < cutoff)\n            {\n                _windows.TryRemove(pair.Key, out _);\n            }\n        }\n    }\n\n    public static string ClientKey(HttpContext context) =>\n        context.Connection.RemoteIpAddress?.ToString() ?? \"unknown\";\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/RateLimiting/TokenBucket.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 1014,
+      "lines": 40,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Participant.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Server.RateLimiting;\n\npublic sealed class TokenBucket\n{\n    private readonly object _sync = new();\n    private readonly double _capacity;\n    private readonly double _ratePerSecond;\n    private double _tokens;\n    private DateTimeOffset _lastRefill;\n\n    public TokenBucket(int burst, double ratePerSecond)\n    {\n        _capacity = Math.Max(1, burst);\n        _ratePerSecond = Math.Max(0.01, ratePerSecond);\n        _tokens = _capacity;\n        _lastRefill = DateTimeOffset.UtcNow;\n    }\n\n    public bool TryTake()\n    {\n        lock (_sync)\n        {\n            var now = DateTimeOffset.UtcNow;\n            var elapsed = (now - _lastRefill).TotalSeconds;\n            if (elapsed > 0)\n            {\n                _tokens = Math.Min(_capacity, _tokens + (elapsed * _ratePerSecond));\n                _lastRefill = now;\n            }\n\n            if (_tokens < 1)\n            {\n                return false;\n            }\n\n            _tokens -= 1;\n            return true;\n        }\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Realtime/Outbound.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 497,
+      "lines": 18,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Server.Realtime;\n\npublic readonly struct Outbound\n{\n    private Outbound(string? text, int? closeCode, string? reason)\n    {\n        Text = text;\n        CloseCode = closeCode;\n        Reason = reason;\n    }\n\n    public string? Text { get; }\n    public int? CloseCode { get; }\n    public string? Reason { get; }\n\n    public static Outbound Message(string text) => new(text, null, null);\n    public static Outbound Close(int code, string? reason) => new(null, code, reason);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Shared/ProtocolInfo.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 3255,
+      "lines": 142,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs",
+        "src/Battleship.Web/Net/WsTransport.cs",
+        "src/Battleship.Web/Security/ChatSanitizer.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Globalization;\nusing System.Text.RegularExpressions;\n\nnamespace Battleship.Shared;\n\npublic static class ProtocolInfo\n{\n    public const int Version = 1;\n    public const int MaxMessageBytes = 4096;\n    public const int ChatMaxLength = 200;\n    public const int ErrorDetailMaxLength = 200;\n    public const int RoomCodeLength = 6;\n    public const string RoomCodePattern = @\"\\A[A-HJ-NP-Z2-9]{6}\\z\";\n    public const string CoordinatePattern = @\"\\A[A-J](10|[1-9])\\z\";\n    public const string RoomCodeAlphabet = \"ABCDEFGHJKLMNPQRSTUVWXYZ23456789\";\n\n    private static readonly Regex RoomCodeRegex =\n        new(RoomCodePattern, RegexOptions.CultureInvariant);\n\n    private static readonly Regex CoordinateRegex =\n        new(CoordinatePattern, RegexOptions.CultureInvariant);\n\n    public static bool IsValidRoomCode(string? code) =>\n        code is not null && RoomCodeRegex.IsMatch(code);\n\n    public static bool IsValidCoordinate(string? coordinate) =>\n        coordinate is not null && CoordinateRegex.IsMatch(coordinate);\n\n    public static bool IsValidChatText(string? text)\n    {\n        if (text is null || text.Length is < 1 or > ChatMaxLength)\n        {\n            return false;\n        }\n\n        if (HasInvalidSurrogates(text))\n        {\n            return false;\n        }\n\n        foreach (var ch in text)\n        {\n            if (char.IsControl(ch) || IsBidiOverride(ch))\n            {\n                return false;\n            }\n        }\n\n        return true;\n    }\n\n    public static bool HasInvalidSurrogates(string text)\n    {\n        for (var i = 0; i < text.Length; i++)\n        {\n            if (char.IsHighSurrogate(text[i]))\n            {\n                if (i + 1 >= text.Length || !char.IsLowSurrogate(text[i + 1]))\n                {\n                    return true;\n                }\n\n                i++;\n            }\n            else if (char.IsLowSurrogate(text[i]))\n            {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    public static bool IsBidiOverride(char ch) => ch switch\n    {\n        '\\u202A' or '\\u202B' or '\\u202C' or '\\u202D' or '\\u202E' => true,\n        '\\u2066' or '\\u2067' or '\\u2068' or '\\u2069' => true,\n        '\\u200E' or '\\u200F' or '\\u061C' => true,\n        _ => false\n    };\n\n    public static string FormatCoordinate(int row, int col) =>\n        string.Create(CultureInfo.InvariantCulture, $\"{(char)('A' + row)}{col + 1}\");\n\n    public static string? TruncateDetail(string? detail)\n    {\n        if (string.IsNullOrEmpty(detail))\n        {\n            return null;\n        }\n\n        if (detail.Length <= ErrorDetailMaxLength)\n        {\n            return detail;\n        }\n\n        var length = ErrorDetailMaxLength;\n        if (char.IsHighSurrogate(detail[length - 1]))\n        {\n            length--;\n        }\n\n        return detail[..length];\n    }\n}\n\npublic enum MessageType\n{\n    HELLO,\n    READY,\n    SHOT,\n    RESULT,\n    CHAT,\n    QUIT,\n    ERROR\n}\n\npublic enum ShotOutcome\n{\n    HIT,\n    MISS,\n    SUNK,\n    GAME_OVER\n}\n\npublic enum ShipKind\n{\n    CARRIER,\n    BATTLESHIP,\n    CRUISER,\n    SUBMARINE,\n    PATROL_BOAT\n}\n\npublic enum ProtocolErrorCode\n{\n    VALIDATION,\n    CONFLICT,\n    VERSION_MISMATCH,\n    RATE_LIMITED,\n    FATAL\n}"
+    },
+    {
+      "path": "src/Battleship.Web/Logging/AppLogger.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 299,
+      "lines": 11,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "namespace Battleship.Web.Logging;\n\npublic static class AppLogger\n{\n    public static void Log(string eventName, string? detail = null)\n    {\n        Console.WriteLine(string.IsNullOrEmpty(detail)\n            ? $\"[battleship] {eventName}\"\n            : $\"[battleship] {eventName} {detail}\");\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Net/ApiResult.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 325,
+      "lines": 9,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Web/Net/RoomApiClient.cs",
+        "src/Battleship.Web/Program.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Web.Net;\n\npublic sealed record ApiResult<T>(bool Success, T? Value, string? ErrorCode, string? Detail)\n{\n    public static ApiResult<T> Ok(T value) => new(true, value, null, null);\n\n    public static ApiResult<T> Fail(string errorCode, string detail) =>\n        new(false, default, errorCode, detail);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Net/GameOptions.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 2147,
+      "lines": 43,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Web/Program.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Globalization;\nusing Microsoft.Extensions.Configuration;\n\nnamespace Battleship.Web.Net;\n\npublic sealed class GameOptions\n{\n    public int? AiSeed { get; init; }\n    public int AiMoveDelayMs { get; init; } = 600;\n    public int AiDecisionBudgetMs { get; init; } = 250;\n    public int HttpTimeoutSeconds { get; init; } = 10;\n    public int JoinTimeoutSeconds { get; init; } = 600;\n    public int HandshakeTimeoutSeconds { get; init; } = 15;\n    public int ReadTimeoutSeconds { get; init; } = 60;\n    public int JoinRetryCount { get; init; } = 20;\n    public int JoinRetryDelayMs { get; init; } = 500;\n\n    public static GameOptions FromConfiguration(IConfiguration configuration)\n    {\n        return new GameOptions\n        {\n            AiSeed = NullableInt(configuration, \"Battleship:AiSeed\"),\n            AiMoveDelayMs = Math.Max(0, Integer(configuration, \"Battleship:AiMoveDelayMs\", 600)),\n            AiDecisionBudgetMs = Math.Max(1, Integer(configuration, \"Battleship:AiDecisionBudgetMs\", 250)),\n            HttpTimeoutSeconds = Math.Max(1, Integer(configuration, \"Battleship:HttpTimeoutSeconds\", 10)),\n            JoinTimeoutSeconds = Math.Max(1, Integer(configuration, \"Battleship:JoinTimeoutSeconds\", 600)),\n            HandshakeTimeoutSeconds = Math.Max(1, Integer(configuration, \"Battleship:HandshakeTimeoutSeconds\", 15)),\n            ReadTimeoutSeconds = Math.Max(1, Integer(configuration, \"Battleship:ReadTimeoutSeconds\", 60)),\n            JoinRetryCount = Math.Max(0, Integer(configuration, \"Battleship:JoinRetryCount\", 20)),\n            JoinRetryDelayMs = Math.Max(0, Integer(configuration, \"Battleship:JoinRetryDelayMs\", 500))\n        };\n    }\n\n    private static int Integer(IConfiguration configuration, string key, int fallback) =>\n        int.TryParse(configuration[key], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)\n            ? value\n            : fallback;\n\n    private static int? NullableInt(IConfiguration configuration, string key) =>\n        int.TryParse(configuration[key], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)\n            ? value\n            : null;\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Net/WsFrame.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 692,
+      "lines": 25,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Web/Net/WsTransport.cs",
+        "src/Battleship.Web/Program.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Net.WebSockets;\n\nnamespace Battleship.Web.Net;\n\npublic enum WsFrameKind\n{\n    Text,\n    Binary,\n    Close,\n    TooLarge\n}\n\npublic readonly record struct WsFrame(\n    WsFrameKind Kind,\n    string? Text,\n    WebSocketCloseStatus? CloseStatus,\n    string? CloseDescription)\n{\n    public static WsFrame FromText(string text) => new(WsFrameKind.Text, text, null, null);\n    public static WsFrame Binary() => new(WsFrameKind.Binary, null, null, null);\n    public static WsFrame TooLarge() => new(WsFrameKind.TooLarge, null, null, null);\n\n    public static WsFrame Close(WebSocketCloseStatus? status, string? description) =>\n        new(WsFrameKind.Close, null, status, description);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/SeoInfo.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 603,
+      "lines": 17,
+      "dependencies": [],
+      "dependents": [
+        "src/Battleship.Web/Program.cs"
+      ],
+      "cycle": false,
+      "content": "// SeoInfo.cs\nusing System.Text.Json.Nodes;\n\nnamespace Battleship.Web;\n\npublic static class SeoInfo\n{\n    public const string SiteName = \"Battleship\";\n    public const string RepositoryUrl = \"https://github.com/DocDBrown/BattleshipC-WebGame-\";\n    public const string ImagePath = \"battleship1.webp\";\n    public const string ImageAlt = \"Battleship web game screenshot showing two 10x10 boards\";\n\n    public static string Absolute(string baseUri, string path) =>\n        new Uri(new Uri(baseUri), path.TrimStart('/')).ToString();\n\n    public static string ToJsonLd(JsonNode node) => node.ToJsonString();\n}"
+    },
+    {
+      "path": "src/Battleship.Web/wwwroot/js/app.js",
+      "language": "javascript",
+      "kind": "source",
+      "role": "module",
+      "depth": 0,
+      "bytes": 1800,
+      "lines": 63,
+      "dependencies": [],
+      "dependents": [],
+      "cycle": false,
+      "content": "(function () {\n    \"use strict\";\n\n    window.battleship = {\n        focusById: function (id) {\n            var element = document.getElementById(id);\n            if (!element) {\n                return;\n            }\n\n            try {\n                element.focus({ preventScroll: true });\n            } catch (error) {\n                element.focus();\n            }\n        },\n\n        copyText: function (text) {\n            if (navigator.clipboard && window.isSecureContext) {\n                return navigator.clipboard.writeText(text).then(function () {\n                    return true;\n                }).catch(function () {\n                    return legacyCopy(text);\n                });\n            }\n\n            return Promise.resolve(legacyCopy(text));\n        }\n    };\n\n    function legacyCopy(text) {\n        var area = document.createElement(\"textarea\");\n        area.value = text;\n        area.setAttribute(\"readonly\", \"\");\n        area.style.position = \"fixed\";\n        area.style.top = \"0\";\n        area.style.left = \"0\";\n        area.style.opacity = \"0\";\n        document.body.appendChild(area);\n        area.select();\n        var copied = false;\n        try {\n            copied = document.execCommand(\"copy\");\n        } catch (error) {\n            copied = false;\n        } finally {\n            document.body.removeChild(area);\n        }\n\n        return copied;\n    }\n\n    document.addEventListener(\"dragstart\", function (event) {\n        var target = event.target;\n        var card = target && target.closest ? target.closest(\"[data-ship]\") : null;\n        if (!card || !event.dataTransfer) {\n            return;\n        }\n\n        event.dataTransfer.setData(\"text/plain\", card.getAttribute(\"data-ship\") || \"\");\n        event.dataTransfer.effectAllowed = \"move\";\n    });\n})();\n"
+    },
+    {
+      "path": "src/Battleship.Server/Options/OptionsProvider.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 1,
+      "bytes": 368,
+      "lines": 15,
+      "dependencies": [
+        "src/Battleship.Server/Options/BattleshipOptions.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": false,
+      "content": "using Microsoft.Extensions.Options;\n\nnamespace Battleship.Server.Options;\n\npublic sealed class OptionsProvider\n{\n    private readonly IOptionsMonitor<BattleshipOptions> _options;\n\n    public OptionsProvider(IOptionsMonitor<BattleshipOptions> options)\n    {\n        _options = options;\n    }\n\n    public BattleshipOptions Get() => _options.CurrentValue.Normalized();\n}\n"
+    },
+    {
+      "path": "src/Battleship.Shared/BoardCoords.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 1,
+      "bytes": 988,
+      "lines": 42,
+      "dependencies": [
+        "src/Battleship.Shared/ProtocolInfo.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs",
+        "src/Battleship.Web/Net/WsTransport.cs",
+        "src/Battleship.Web/Security/ChatSanitizer.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Shared;\n\npublic static class BoardCoords\n{\n    public const int Size = 10;\n\n    public static bool TryParse(string? text, out int row, out int col)\n    {\n        row = -1;\n        col = -1;\n        if (string.IsNullOrWhiteSpace(text))\n        {\n            return false;\n        }\n\n        var trimmed = text.Trim().ToUpperInvariant();\n        if (trimmed.Length is < 2 or > 3)\n        {\n            return false;\n        }\n\n        var letter = trimmed[0];\n        if (letter is < 'A' or > 'J')\n        {\n            return false;\n        }\n\n        if (!int.TryParse(trimmed.AsSpan(1), out var number) || number is < 1 or > 10)\n        {\n            return false;\n        }\n\n        row = letter - 'A';\n        col = number - 1;\n        return true;\n    }\n\n    public static bool InBounds(int row, int col) =>\n        row is >= 0 and < Size && col is >= 0 and < Size;\n\n    public static string Format(int row, int col) => ProtocolInfo.FormatCoordinate(row, col);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Shared/ProtocolMessage.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 1,
+      "bytes": 1694,
+      "lines": 64,
+      "dependencies": [
+        "src/Battleship.Shared/ProtocolInfo.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs",
+        "src/Battleship.Web/Net/WsTransport.cs",
+        "src/Battleship.Web/Security/ChatSanitizer.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Shared;\n\npublic sealed class ProtocolMessage\n{\n    public int? V { get; set; }\n    public MessageType? Type { get; set; }\n    public int? Seq { get; set; }\n    public string? Coord { get; set; }\n    public ShotOutcome? Outcome { get; set; }\n    public ShipKind? Ship { get; set; }\n    public string? Text { get; set; }\n    public ProtocolErrorCode? Code { get; set; }\n    public string? Detail { get; set; }\n\n    public static ProtocolMessage Hello() => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.HELLO\n    };\n\n    public static ProtocolMessage Ready() => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.READY\n    };\n\n    public static ProtocolMessage Shot(int seq, string coordinate) => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.SHOT,\n        Seq = seq,\n        Coord = coordinate\n    };\n\n    public static ProtocolMessage Result(int seq, ShotOutcome outcome, ShipKind? ship = null) => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.RESULT,\n        Seq = seq,\n        Outcome = outcome,\n        Ship = ship\n    };\n\n    public static ProtocolMessage Chat(string text) => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.CHAT,\n        Text = text\n    };\n\n    public static ProtocolMessage Quit() => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.QUIT\n    };\n\n    public static ProtocolMessage Error(ProtocolErrorCode code, string? detail = null) => new()\n    {\n        V = ProtocolInfo.Version,\n        Type = MessageType.ERROR,\n        Code = code,\n        Detail = ProtocolInfo.TruncateDetail(detail)\n    };\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Net/RoomApiClient.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 1,
+      "bytes": 4291,
+      "lines": 108,
+      "dependencies": [
+        "src/Battleship.Web/Net/ApiResult.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Program.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Net;\nusing System.Net.Http.Json;\nusing System.Text.Json;\n\nnamespace Battleship.Web.Net;\n\npublic sealed class RoomApiClient\n{\n    private readonly HttpClient _http;\n\n    public RoomApiClient(HttpClient http)\n    {\n        _http = http;\n    }\n\n    public async Task<ApiResult<string>> CreateRoomAsync(CancellationToken cancellationToken)\n    {\n        try\n        {\n            using var response = await _http.PostAsync(\"api/rooms\", null, cancellationToken);\n            if (response.StatusCode == HttpStatusCode.Created)\n            {\n                var created = await response.Content.ReadFromJsonAsync<CreateRoomResponse>(cancellationToken: cancellationToken);\n                return created?.RoomCode is { Length: > 0 } code\n                    ? ApiResult<string>.Ok(code)\n                    : ApiResult<string>.Fail(\"INTERNAL\", \"The server returned an empty room code.\");\n            }\n\n            var detail = await ReadDetailAsync(response, cancellationToken);\n            return response.StatusCode switch\n            {\n                HttpStatusCode.BadRequest => ApiResult<string>.Fail(\"VALIDATION_FAILED\", detail),\n                HttpStatusCode.Conflict => ApiResult<string>.Fail(\"CONFLICT\", detail),\n                HttpStatusCode.TooManyRequests => ApiResult<string>.Fail(\"RATE_LIMITED\", detail),\n                _ => ApiResult<string>.Fail(\"UPSTREAM_UNAVAILABLE\", detail)\n            };\n        }\n        catch (OperationCanceledException)\n        {\n            return ApiResult<string>.Fail(\"UPSTREAM_UNAVAILABLE\", \"The server did not respond in time.\");\n        }\n        catch (HttpRequestException)\n        {\n            return ApiResult<string>.Fail(\"UPSTREAM_UNAVAILABLE\", \"The server could not be reached.\");\n        }\n    }\n\n    public async Task<ApiResult<int>> GetRoomAsync(string roomCode, CancellationToken cancellationToken)\n    {\n        try\n        {\n            using var response = await _http.GetAsync($\"api/rooms/{Uri.EscapeDataString(roomCode)}\", cancellationToken);\n            if (response.StatusCode == HttpStatusCode.OK)\n            {\n                var state = await response.Content.ReadFromJsonAsync<RoomStateResponse>(cancellationToken: cancellationToken);\n                return state is null\n                    ? ApiResult<int>.Fail(\"INTERNAL\", \"The server returned an empty room state.\")\n                    : ApiResult<int>.Ok(state.Participants);\n            }\n\n            var detail = await ReadDetailAsync(response, cancellationToken);\n            return response.StatusCode switch\n            {\n                HttpStatusCode.BadRequest => ApiResult<int>.Fail(\"VALIDATION_FAILED\", detail),\n                HttpStatusCode.NotFound => ApiResult<int>.Fail(\"NOT_FOUND\", detail),\n                HttpStatusCode.Conflict => ApiResult<int>.Fail(\"CONFLICT\", detail),\n                HttpStatusCode.TooManyRequests => ApiResult<int>.Fail(\"RATE_LIMITED\", detail),\n                _ => ApiResult<int>.Fail(\"UPSTREAM_UNAVAILABLE\", detail)\n            };\n        }\n        catch (OperationCanceledException)\n        {\n            return ApiResult<int>.Fail(\"UPSTREAM_UNAVAILABLE\", \"The server did not respond in time.\");\n        }\n        catch (HttpRequestException)\n        {\n            return ApiResult<int>.Fail(\"UPSTREAM_UNAVAILABLE\", \"The server could not be reached.\");\n        }\n    }\n\n    private static async Task<string> ReadDetailAsync(HttpResponseMessage response, CancellationToken cancellationToken)\n    {\n        try\n        {\n            var body = await response.Content.ReadAsStringAsync(cancellationToken);\n            using var document = JsonDocument.Parse(body);\n            if (document.RootElement.TryGetProperty(\"detail\", out var detail)\n                && detail.ValueKind == JsonValueKind.String)\n            {\n                return detail.GetString() ?? response.ReasonPhrase ?? \"Request failed.\";\n            }\n        }\n        catch (JsonException)\n        {\n            // Fall back to the status line.\n        }\n        catch (InvalidOperationException)\n        {\n            // No content.\n        }\n\n        return response.ReasonPhrase ?? \"Request failed.\";\n    }\n\n    private sealed record CreateRoomResponse(string RoomCode);\n\n    private sealed record RoomStateResponse(int Participants);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Shared/ProtocolCodec.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 2,
+      "bytes": 7191,
+      "lines": 227,
+      "dependencies": [
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs",
+        "src/Battleship.Web/Net/WsTransport.cs",
+        "src/Battleship.Web/Security/ChatSanitizer.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Text;\nusing System.Text.Json;\nusing System.Text.Json.Serialization;\n\nnamespace Battleship.Shared;\n\npublic sealed class ProtocolCodec\n{\n    private static readonly JsonSerializerOptions Options = new()\n    {\n        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,\n        PropertyNameCaseInsensitive = false,\n        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,\n        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,\n        WriteIndented = false,\n        Converters = { new JsonStringEnumConverter(allowIntegerValues: false) }\n    };\n\n    private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);\n\n    public string Serialize(ProtocolMessage message) =>\n        JsonSerializer.Serialize(message, Options);\n\n    public bool TryDeserialize(string text, out ProtocolMessage? message, out string error)\n    {\n        message = null;\n        if (string.IsNullOrEmpty(text))\n        {\n            error = \"Message is empty.\";\n            return false;\n        }\n\n        if (Encoding.UTF8.GetByteCount(text) > ProtocolInfo.MaxMessageBytes)\n        {\n            error = \"Message exceeds the maximum size.\";\n            return false;\n        }\n\n        try\n        {\n            message = JsonSerializer.Deserialize<ProtocolMessage>(text, Options);\n        }\n        catch (JsonException)\n        {\n            error = \"Message is not valid protocol JSON.\";\n            return false;\n        }\n        catch (NotSupportedException)\n        {\n            error = \"Message contains an unsupported value.\";\n            return false;\n        }\n\n        if (message is null)\n        {\n            error = \"Message is empty.\";\n            return false;\n        }\n\n        return Validate(message, out error);\n    }\n\n    public bool TryDeserializeUtf8(ReadOnlySpan<byte> bytes, out ProtocolMessage? message, out string error)\n    {\n        message = null;\n        if (bytes.Length > ProtocolInfo.MaxMessageBytes)\n        {\n            error = \"Message exceeds the maximum size.\";\n            return false;\n        }\n\n        string text;\n        try\n        {\n            text = StrictUtf8.GetString(bytes);\n        }\n        catch (DecoderFallbackException)\n        {\n            error = \"Message is not valid UTF-8 text.\";\n            return false;\n        }\n\n        return TryDeserialize(text, out message, out error);\n    }\n\n    public static bool Validate(ProtocolMessage message, out string error)\n    {\n        if (message.V is null)\n        {\n            error = \"Missing v.\";\n            return false;\n        }\n\n        if (message.Type is null)\n        {\n            error = \"Missing type.\";\n            return false;\n        }\n\n        return message.Type.Value switch\n        {\n            MessageType.HELLO or MessageType.READY or MessageType.QUIT => ValidateEmpty(message, out error),\n            MessageType.SHOT => ValidateShot(message, out error),\n            MessageType.RESULT => ValidateResult(message, out error),\n            MessageType.CHAT => ValidateChat(message, out error),\n            MessageType.ERROR => ValidateError(message, out error),\n            _ => Fail(\"Unknown message type.\", out error)\n        };\n    }\n\n    private static bool ValidateEmpty(ProtocolMessage message, out string error)\n    {\n        if (HasAnyPayload(message) || message.Seq is not null)\n        {\n            return Fail(\"Message has fields that are not allowed for this type.\", out error);\n        }\n\n        error = string.Empty;\n        return true;\n    }\n\n    private static bool ValidateShot(ProtocolMessage message, out string error)\n    {\n        if (message.Seq is null or < 1)\n        {\n            return Fail(\"seq must be a positive integer.\", out error);\n        }\n\n        if (!ProtocolInfo.IsValidCoordinate(message.Coord))\n        {\n            return Fail(\"coord must match A1..J10.\", out error);\n        }\n\n        if (message.Outcome is not null || message.Ship is not null || message.Text is not null ||\n            message.Code is not null || message.Detail is not null)\n        {\n            return Fail(\"SHOT contains fields that are not allowed for this type.\", out error);\n        }\n\n        error = string.Empty;\n        return true;\n    }\n\n    private static bool ValidateResult(ProtocolMessage message, out string error)\n    {\n        if (message.Seq is null or < 1)\n        {\n            return Fail(\"seq must be a positive integer.\", out error);\n        }\n\n        if (message.Outcome is null)\n        {\n            return Fail(\"outcome is required.\", out error);\n        }\n\n        var requiresShip = message.Outcome is ShotOutcome.SUNK or ShotOutcome.GAME_OVER;\n        if (requiresShip && message.Ship is null)\n        {\n            return Fail(\"ship is required for SUNK and GAME_OVER.\", out error);\n        }\n\n        if (!requiresShip && message.Ship is not null)\n        {\n            return Fail(\"ship is only allowed for SUNK and GAME_OVER.\", out error);\n        }\n\n        if (message.Coord is not null || message.Text is not null || message.Code is not null ||\n            message.Detail is not null)\n        {\n            return Fail(\"RESULT contains fields that are not allowed for this type.\", out error);\n        }\n\n        error = string.Empty;\n        return true;\n    }\n\n    private static bool ValidateChat(ProtocolMessage message, out string error)\n    {\n        if (!ProtocolInfo.IsValidChatText(message.Text))\n        {\n            return Fail(\"text must be 1..200 characters without control or bidi override characters.\", out error);\n        }\n\n        if (message.Seq is not null || message.Coord is not null || message.Outcome is not null ||\n            message.Ship is not null || message.Code is not null || message.Detail is not null)\n        {\n            return Fail(\"CHAT contains fields that are not allowed for this type.\", out error);\n        }\n\n        error = string.Empty;\n        return true;\n    }\n\n    private static bool ValidateError(ProtocolMessage message, out string error)\n    {\n        if (message.Code is null)\n        {\n            return Fail(\"code is required.\", out error);\n        }\n\n        if (message.Detail is not null\n            && (message.Detail.Length > ProtocolInfo.ErrorDetailMaxLength\n                || ProtocolInfo.HasInvalidSurrogates(message.Detail)))\n        {\n            return Fail(\"detail must be at most 200 characters of valid text.\", out error);\n        }\n\n        if (message.Seq is not null || message.Coord is not null || message.Outcome is not null ||\n            message.Ship is not null || message.Text is not null)\n        {\n            return Fail(\"ERROR contains fields that are not allowed for this type.\", out error);\n        }\n\n        error = string.Empty;\n        return true;\n    }\n\n    private static bool HasAnyPayload(ProtocolMessage message) =>\n        message.Coord is not null || message.Outcome is not null || message.Ship is not null ||\n        message.Text is not null || message.Code is not null || message.Detail is not null;\n\n    private static bool Fail(string message, out string error)\n    {\n        error = message;\n        return false;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 3,
+      "bytes": 488,
+      "lines": 19,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Security.Cryptography;\nusing Battleship.Shared;\n\nnamespace Battleship.Server.Rooms;\n\npublic sealed class RoomCodeGenerator\n{\n    public string Generate()\n    {\n        Span<char> code = stackalloc char[ProtocolInfo.RoomCodeLength];\n        var alphabet = ProtocolInfo.RoomCodeAlphabet;\n        for (var i = 0; i < code.Length; i++)\n        {\n            code[i] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];\n        }\n\n        return new string(code);\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/Coordinate.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 3,
+      "bytes": 1164,
+      "lines": 41,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic readonly record struct Coordinate(int Row, int Col)\n{\n    public static readonly IReadOnlyList<Coordinate> AllCells = CreateAllCells();\n\n    public bool IsValid => BoardCoords.InBounds(Row, Col);\n    public string Label => BoardCoords.Format(Row, Col);\n\n    public Coordinate Offset(int rowDelta, int colDelta) => new(Row + rowDelta, Col + colDelta);\n\n    public override string ToString() => Label;\n\n    public static bool TryParse(string? text, out Coordinate coordinate)\n    {\n        if (BoardCoords.TryParse(text, out var row, out var col))\n        {\n            coordinate = new Coordinate(row, col);\n            return true;\n        }\n\n        coordinate = default;\n        return false;\n    }\n\n    private static IReadOnlyList<Coordinate> CreateAllCells()\n    {\n        var cells = new List<Coordinate>(BoardCoords.Size * BoardCoords.Size);\n        for (var row = 0; row < BoardCoords.Size; row++)\n        {\n            for (var col = 0; col < BoardCoords.Size; col++)\n            {\n                cells.Add(new Coordinate(row, col));\n            }\n        }\n\n        return cells;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/ShipDefinition.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 3,
+      "bytes": 794,
+      "lines": 24,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic sealed record ShipDefinition(ShipKind Kind, string Name, int Size);\n\npublic static class Fleet\n{\n    public static readonly IReadOnlyList<ShipDefinition> Ships = new[]\n    {\n        new ShipDefinition(ShipKind.CARRIER, \"Carrier\", 5),\n        new ShipDefinition(ShipKind.BATTLESHIP, \"Battleship\", 4),\n        new ShipDefinition(ShipKind.CRUISER, \"Cruiser\", 3),\n        new ShipDefinition(ShipKind.SUBMARINE, \"Submarine\", 3),\n        new ShipDefinition(ShipKind.PATROL_BOAT, \"Patrol Boat\", 2)\n    };\n\n    public static ShipDefinition Get(ShipKind kind) =>\n        Ships.First(s => s.Kind == kind);\n\n    public static int SizeOf(ShipKind kind) => Get(kind).Size;\n\n    public static string NameOf(ShipKind kind) => Get(kind).Name;\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Net/WsTransport.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 3,
+      "bytes": 4072,
+      "lines": 135,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Net/WsFrame.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Program.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Net.WebSockets;\nusing System.Text;\nusing Battleship.Shared;\n\nnamespace Battleship.Web.Net;\n\npublic sealed class WsTransport : IAsyncDisposable\n{\n    private static readonly ProtocolCodec Codec = new();\n    private readonly SemaphoreSlim _sendLock = new(1, 1);\n    private ClientWebSocket? _socket;\n    private int _disposed;\n\n    public ClientWebSocket Socket => _socket ?? throw new InvalidOperationException(\"The socket is not connected.\");\n\n    public bool IsOpen => _socket is { State: WebSocketState.Open };\n\n    public async Task ConnectAsync(Uri uri, TimeSpan timeout, CancellationToken cancellationToken)\n    {\n        if (_socket is not null)\n        {\n            throw new InvalidOperationException(\"The transport is already connected.\");\n        }\n\n        var socket = new ClientWebSocket();\n        try\n        {\n            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);\n            timeoutSource.CancelAfter(timeout);\n            await socket.ConnectAsync(uri, timeoutSource.Token);\n            _socket = socket;\n        }\n        catch\n        {\n            socket.Dispose();\n            throw;\n        }\n    }\n\n    public Task SendAsync(ProtocolMessage message, CancellationToken cancellationToken) =>\n        SendTextAsync(Codec.Serialize(message), cancellationToken);\n\n    public async Task SendTextAsync(string text, CancellationToken cancellationToken)\n    {\n        var bytes = Encoding.UTF8.GetBytes(text);\n        if (bytes.Length > ProtocolInfo.MaxMessageBytes)\n        {\n            throw new InvalidOperationException(\"The message exceeds the protocol size limit.\");\n        }\n\n        var socket = Socket;\n        await _sendLock.WaitAsync(cancellationToken);\n        try\n        {\n            await socket.SendAsync(\n                new ArraySegment<byte>(bytes),\n                WebSocketMessageType.Text,\n                endOfMessage: true,\n                cancellationToken);\n        }\n        finally\n        {\n            _sendLock.Release();\n        }\n    }\n\n    public async Task<WsFrame> ReceiveAsync(CancellationToken cancellationToken)\n    {\n        var socket = Socket;\n        var buffer = new byte[ProtocolInfo.MaxMessageBytes + 1];\n        using var message = new MemoryStream(ProtocolInfo.MaxMessageBytes);\n\n        while (true)\n        {\n            var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);\n            if (result.MessageType == WebSocketMessageType.Close)\n            {\n                return WsFrame.Close(socket.CloseStatus, socket.CloseStatusDescription);\n            }\n\n            if (result.MessageType == WebSocketMessageType.Binary)\n            {\n                return WsFrame.Binary();\n            }\n\n            if (message.Length + result.Count > ProtocolInfo.MaxMessageBytes)\n            {\n                return WsFrame.TooLarge();\n            }\n\n            message.Write(buffer, 0, result.Count);\n            if (!result.EndOfMessage)\n            {\n                continue;\n            }\n\n            return WsFrame.FromText(Encoding.UTF8.GetString(message.ToArray()));\n        }\n    }\n\n    public async Task CloseAsync(int closeCode, string? reason, TimeSpan? timeout = null)\n    {\n        var socket = _socket;\n        if (socket is null)\n        {\n            return;\n        }\n\n        try\n        {\n            if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)\n            {\n                using var source = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));\n                await socket.CloseOutputAsync((WebSocketCloseStatus)closeCode, reason, source.Token);\n            }\n        }\n        catch\n        {\n            // The socket is already closing.\n        }\n    }\n\n    public async ValueTask DisposeAsync()\n    {\n        if (Interlocked.Exchange(ref _disposed, 1) == 1)\n        {\n            return;\n        }\n\n        await CloseAsync(1000, \"page closed\");\n        _socket?.Dispose();\n        _socket = null;\n        _sendLock.Dispose();\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Security/ChatSanitizer.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 3,
+      "bytes": 951,
+      "lines": 42,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [],
+      "cycle": false,
+      "content": "using System.Text;\nusing Battleship.Shared;\n\nnamespace Battleship.Web.Security;\n\npublic static class ChatSanitizer\n{\n    public static bool IsValid(string? text) => ProtocolInfo.IsValidChatText(text);\n\n    public static string Sanitize(string? text)\n    {\n        if (string.IsNullOrEmpty(text))\n        {\n            return string.Empty;\n        }\n\n        var builder = new StringBuilder(text.Length);\n        foreach (var ch in text)\n        {\n            if (char.IsControl(ch) || ProtocolInfo.IsBidiOverride(ch))\n            {\n                continue;\n            }\n\n            builder.Append(ch);\n        }\n\n        var clean = builder.ToString().Trim();\n        if (clean.Length <= ProtocolInfo.ChatMaxLength)\n        {\n            return clean;\n        }\n\n        var length = ProtocolInfo.ChatMaxLength;\n        if (char.IsHighSurrogate(clean[length - 1]))\n        {\n            length--;\n        }\n\n        return clean[..length];\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/Ship.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 4,
+      "bytes": 652,
+      "lines": 23,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic sealed class Ship\n{\n    public Ship(ShipDefinition definition, IReadOnlyList<Coordinate> cells, bool horizontal)\n    {\n        Definition = definition;\n        Cells = cells;\n        Horizontal = horizontal;\n    }\n\n    public ShipDefinition Definition { get; }\n    public IReadOnlyList<Coordinate> Cells { get; }\n    public bool Horizontal { get; }\n    public HashSet<Coordinate> Hits { get; } = new();\n\n    public ShipKind Kind => Definition.Kind;\n    public string Name => Definition.Name;\n    public int Size => Definition.Size;\n    public bool IsSunk => Hits.Count >= Cells.Count;\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/TargetBoard.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 4,
+      "bytes": 2529,
+      "lines": 91,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Coordinate.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic sealed class TargetBoard\n{\n    private readonly Dictionary<Coordinate, ShotOutcome> _shots = new();\n    private readonly HashSet<Coordinate> _sunk = new();\n\n    public IReadOnlyDictionary<Coordinate, ShotOutcome> Shots => _shots;\n\n    public bool IsTried(Coordinate coordinate) => _shots.ContainsKey(coordinate);\n\n    public bool IsSunk(Coordinate coordinate) => _sunk.Contains(coordinate);\n\n    public void Record(Coordinate coordinate, ShotOutcome outcome) =>\n        _shots[coordinate] = outcome;\n\n    public void MarkSunk(IEnumerable<Coordinate> cells)\n    {\n        foreach (var cell in cells)\n        {\n            _sunk.Add(cell);\n        }\n    }\n\n    public void MarkSunkLine(Coordinate coordinate, int size)\n    {\n        var best = FindSunkSegment(coordinate, size);\n        if (best.Count > 0)\n        {\n            MarkSunk(best);\n            return;\n        }\n\n        _sunk.Add(coordinate);\n    }\n\n    public void Clear()\n    {\n        _shots.Clear();\n        _sunk.Clear();\n    }\n\n    private List<Coordinate> FindSunkSegment(Coordinate coordinate, int size)\n    {\n        List<Coordinate>? best = null;\n        var bestHits = 0;\n\n        for (var offset = 0; offset < size; offset++)\n        {\n            ConsiderSegment(coordinate, size, horizontal: true, offset, ref best, ref bestHits);\n            ConsiderSegment(coordinate, size, horizontal: false, offset, ref best, ref bestHits);\n        }\n\n        return bestHits == size ? best! : new List<Coordinate>();\n    }\n\n    private void ConsiderSegment(\n        Coordinate coordinate,\n        int size,\n        bool horizontal,\n        int offset,\n        ref List<Coordinate>? best,\n        ref int bestHits)\n    {\n        var row = horizontal ? coordinate.Row : coordinate.Row - offset;\n        var col = horizontal ? coordinate.Col - offset : coordinate.Col;\n        var cells = new List<Coordinate>(size);\n        for (var i = 0; i < size; i++)\n        {\n            var cell = new Coordinate(row + (horizontal ? 0 : i), col + (horizontal ? i : 0));\n            if (!cell.IsValid || !IsHitLike(cell))\n            {\n                return;\n            }\n\n            cells.Add(cell);\n        }\n\n        var hits = cells.Count(IsHitLike);\n        if (hits > bestHits)\n        {\n            best = cells;\n            bestHits = hits;\n        }\n    }\n\n    private bool IsHitLike(Coordinate coordinate) =>\n        _shots.TryGetValue(coordinate, out var outcome) && outcome != ShotOutcome.MISS;\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Program.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "entry_point",
+      "depth": 4,
+      "bytes": 548,
+      "lines": 17,
+      "dependencies": [
+        "src/Battleship.Web/Net/ApiResult.cs",
+        "src/Battleship.Web/Net/GameOptions.cs",
+        "src/Battleship.Web/Net/RoomApiClient.cs",
+        "src/Battleship.Web/Net/WsFrame.cs",
+        "src/Battleship.Web/Net/WsTransport.cs",
+        "src/Battleship.Web/SeoInfo.cs"
+      ],
+      "dependents": [],
+      "cycle": false,
+      "content": "using Battleship.Web;\nusing Battleship.Web.Net;\nusing Microsoft.AspNetCore.Components.Web;\nusing Microsoft.AspNetCore.Components.WebAssembly.Hosting;\n\nvar builder = WebAssemblyHostBuilder.CreateDefault(args);\nbuilder.RootComponents.Add<App>(\"#app\");\nbuilder.RootComponents.Add<HeadOutlet>(\"head::after\");\n\nbuilder.Services.AddScoped(_ => new HttpClient\n{\n    BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)\n});\nbuilder.Services.AddScoped<RoomApiClient>();\nbuilder.Services.AddTransient<WsTransport>();\n\nawait builder.Build().RunAsync();\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/Board.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 5,
+      "bytes": 3172,
+      "lines": 108,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic sealed class Board\n{\n    private readonly Ship?[,] _ships = new Ship?[BoardCoords.Size, BoardCoords.Size];\n    private readonly Dictionary<Coordinate, ShotOutcome> _shots = new();\n\n    public List<Ship> Ships { get; } = new();\n    public IReadOnlyDictionary<Coordinate, ShotOutcome> Shots => _shots;\n    public bool AllShipsPlaced => Ships.Count == Fleet.Ships.Count;\n    public bool AllSunk => Ships.Count == Fleet.Ships.Count && Ships.All(s => s.IsSunk);\n\n    public Ship? ShipAt(Coordinate coordinate) =>\n        coordinate.IsValid ? _ships[coordinate.Row, coordinate.Col] : null;\n\n    public bool IsPlaced(ShipKind kind) => Ships.Any(s => s.Kind == kind);\n\n    public bool IsTried(Coordinate coordinate) => _shots.ContainsKey(coordinate);\n\n    public bool TryGetShot(Coordinate coordinate, out ShotOutcome outcome) =>\n        _shots.TryGetValue(coordinate, out outcome);\n\n    public void RecordShot(Coordinate coordinate, ShotOutcome outcome) =>\n        _shots[coordinate] = outcome;\n\n    public void Clear()\n    {\n        Array.Clear(_ships);\n        Ships.Clear();\n        _shots.Clear();\n    }\n\n    public bool TryPlace(ShipKind kind, Coordinate start, bool horizontal)\n    {\n        if (!start.IsValid || IsPlaced(kind))\n        {\n            return false;\n        }\n\n        var definition = Fleet.Get(kind);\n        var cells = new List<Coordinate>(definition.Size);\n        for (var i = 0; i < definition.Size; i++)\n        {\n            var row = start.Row + (horizontal ? 0 : i);\n            var col = start.Col + (horizontal ? i : 0);\n            if (!BoardCoords.InBounds(row, col))\n            {\n                return false;\n            }\n\n            var coordinate = new Coordinate(row, col);\n            if (ShipAt(coordinate) is not null)\n            {\n                return false;\n            }\n\n            cells.Add(coordinate);\n        }\n\n        var ship = new Ship(definition, cells, horizontal);\n        foreach (var cell in cells)\n        {\n            _ships[cell.Row, cell.Col] = ship;\n        }\n\n        Ships.Add(ship);\n        return true;\n    }\n\n    public bool TryAutoPlaceAll(Random random)\n    {\n        for (var boardAttempt = 0; boardAttempt < 64; boardAttempt++)\n        {\n            Clear();\n            var success = true;\n            foreach (var definition in Fleet.Ships)\n            {\n                var placed = false;\n                for (var attempt = 0; attempt < 400; attempt++)\n                {\n                    var horizontal = random.Next(2) == 0;\n                    var start = new Coordinate(random.Next(BoardCoords.Size), random.Next(BoardCoords.Size));\n                    if (TryPlace(definition.Kind, start, horizontal))\n                    {\n                        placed = true;\n                        break;\n                    }\n                }\n\n                if (!placed)\n                {\n                    success = false;\n                    break;\n                }\n            }\n\n            if (success)\n            {\n                return true;\n            }\n        }\n\n        Clear();\n        return false;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/CellView.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 5,
+      "bytes": 201,
+      "lines": 13,
+      "dependencies": [
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "namespace Battleship.Web.Game;\n\npublic enum CellState\n{\n    Unknown,\n    Empty,\n    Ship,\n    Hit,\n    Miss,\n    Sunk\n}\n\npublic readonly record struct CellView(Coordinate Coordinate, CellState State);\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/ShotResult.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 5,
+      "bytes": 227,
+      "lines": 8,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic readonly record struct ShotResult(ShotOutcome Outcome, ShipKind? Ship, Coordinate Coordinate)\n{\n    public bool IsGameOver => Outcome == ShotOutcome.GAME_OVER;\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/BoardView.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 6,
+      "bytes": 2927,
+      "lines": 92,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic static class BoardView\n{\n    public static IReadOnlyList<CellView> Own(Board board)\n    {\n        var cells = new CellView[BoardCoords.Size * BoardCoords.Size];\n        for (var row = 0; row < BoardCoords.Size; row++)\n        {\n            for (var col = 0; col < BoardCoords.Size; col++)\n            {\n                var coordinate = new Coordinate(row, col);\n                var ship = board.ShipAt(coordinate);\n                CellState state;\n                if (board.TryGetShot(coordinate, out var outcome))\n                {\n                    if (outcome == ShotOutcome.MISS)\n                    {\n                        state = CellState.Miss;\n                    }\n                    else\n                    {\n                        state = ship is { IsSunk: true } ? CellState.Sunk : CellState.Hit;\n                    }\n                }\n                else if (ship is not null)\n                {\n                    state = CellState.Ship;\n                }\n                else\n                {\n                    state = CellState.Empty;\n                }\n\n                cells[(row * BoardCoords.Size) + col] = new CellView(coordinate, state);\n            }\n        }\n\n        return cells;\n    }\n\n    public static IReadOnlyList<CellView> Placement(Board board)\n    {\n        var cells = new CellView[BoardCoords.Size * BoardCoords.Size];\n        for (var row = 0; row < BoardCoords.Size; row++)\n        {\n            for (var col = 0; col < BoardCoords.Size; col++)\n            {\n                var coordinate = new Coordinate(row, col);\n                var state = board.ShipAt(coordinate) is not null ? CellState.Ship : CellState.Empty;\n                cells[(row * BoardCoords.Size) + col] = new CellView(coordinate, state);\n            }\n        }\n\n        return cells;\n    }\n\n    public static IReadOnlyList<CellView> Target(TargetBoard target)\n    {\n        var cells = new CellView[BoardCoords.Size * BoardCoords.Size];\n        for (var row = 0; row < BoardCoords.Size; row++)\n        {\n            for (var col = 0; col < BoardCoords.Size; col++)\n            {\n                var coordinate = new Coordinate(row, col);\n                CellState state;\n                if (!target.Shots.TryGetValue(coordinate, out var outcome))\n                {\n                    state = CellState.Unknown;\n                }\n                else if (target.IsSunk(coordinate))\n                {\n                    state = CellState.Sunk;\n                }\n                else if (outcome == ShotOutcome.MISS)\n                {\n                    state = CellState.Miss;\n                }\n                else\n                {\n                    state = CellState.Hit;\n                }\n\n                cells[(row * BoardCoords.Size) + col] = new CellView(coordinate, state);\n            }\n        }\n\n        return cells;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Game/ShotResolver.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 6,
+      "bytes": 1016,
+      "lines": 34,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/ShotResult.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+        "src/Battleship.Web/Session/MultiplayerSession.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\n\nnamespace Battleship.Web.Game;\n\npublic sealed class ShotResolver\n{\n    public ShotResult Resolve(Board board, Coordinate coordinate)\n    {\n        if (!coordinate.IsValid)\n        {\n            throw new ArgumentOutOfRangeException(nameof(coordinate), \"Coordinate is outside the board.\");\n        }\n\n        if (board.IsTried(coordinate))\n        {\n            throw new InvalidOperationException(\"The coordinate has already been targeted.\");\n        }\n\n        var ship = board.ShipAt(coordinate);\n        if (ship is null)\n        {\n            board.RecordShot(coordinate, ShotOutcome.MISS);\n            return new ShotResult(ShotOutcome.MISS, null, coordinate);\n        }\n\n        ship.Hits.Add(coordinate);\n        var outcome = ship.IsSunk\n            ? (board.AllSunk ? ShotOutcome.GAME_OVER : ShotOutcome.SUNK)\n            : ShotOutcome.HIT;\n\n        board.RecordShot(coordinate, outcome);\n        return new ShotResult(outcome, ship.IsSunk ? ship.Kind : null, coordinate);\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/AiView.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 7,
+      "bytes": 3726,
+      "lines": 122,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\nusing Battleship.Web.Game;\n\nnamespace Battleship.Web.Ai;\n\npublic sealed class AiView\n{\n    private readonly HashSet<Coordinate> _shots = new();\n    private readonly HashSet<Coordinate> _hits = new();\n    private readonly HashSet<Coordinate> _misses = new();\n    private readonly HashSet<Coordinate> _sunkCells = new();\n    private readonly List<ShipKind> _remainingShips = Fleet.Ships.Select(s => s.Kind).ToList();\n\n    public IReadOnlyCollection<Coordinate> Hits => _hits;\n    public IReadOnlyCollection<Coordinate> Misses => _misses;\n    public IReadOnlyCollection<Coordinate> SunkCells => _sunkCells;\n    public IReadOnlyList<ShipKind> RemainingShips => _remainingShips;\n\n    public bool IsTried(Coordinate coordinate) => _shots.Contains(coordinate);\n\n    public bool IsUntried(Coordinate coordinate) => coordinate.IsValid && !_shots.Contains(coordinate);\n\n    public List<Coordinate> Untried()\n    {\n        var cells = new List<Coordinate>(BoardCoords.Size * BoardCoords.Size);\n        foreach (var cell in Coordinate.AllCells)\n        {\n            if (!_shots.Contains(cell))\n            {\n                cells.Add(cell);\n            }\n        }\n\n        return cells;\n    }\n\n    public void RecordShot(Coordinate coordinate, ShotOutcome outcome, ShipKind? ship)\n    {\n        _shots.Add(coordinate);\n        switch (outcome)\n        {\n            case ShotOutcome.MISS:\n                _misses.Add(coordinate);\n                break;\n            case ShotOutcome.HIT:\n                _hits.Add(coordinate);\n                break;\n            case ShotOutcome.SUNK:\n            case ShotOutcome.GAME_OVER:\n                _hits.Add(coordinate);\n                if (ship is not null)\n                {\n                    ClearSunkShip(coordinate, Fleet.SizeOf(ship.Value));\n                    _remainingShips.Remove(ship.Value);\n                }\n\n                break;\n        }\n    }\n\n    private void ClearSunkShip(Coordinate coordinate, int size)\n    {\n        if (TryFindSunkSegment(coordinate, size, out var segment))\n        {\n            foreach (var cell in segment)\n            {\n                _hits.Remove(cell);\n                _sunkCells.Add(cell);\n            }\n\n            return;\n        }\n\n        _hits.Remove(coordinate);\n        _sunkCells.Add(coordinate);\n    }\n\n    private bool TryFindSunkSegment(Coordinate coordinate, int size, out List<Coordinate> segment)\n    {\n        List<Coordinate>? best = null;\n        var bestHits = 0;\n\n        for (var offset = 0; offset < size; offset++)\n        {\n            ConsiderSegment(coordinate, size, horizontal: true, offset, ref best, ref bestHits);\n            ConsiderSegment(coordinate, size, horizontal: false, offset, ref best, ref bestHits);\n        }\n\n        segment = best ?? new List<Coordinate>();\n        return bestHits == size;\n    }\n\n    private void ConsiderSegment(\n        Coordinate coordinate,\n        int size,\n        bool horizontal,\n        int offset,\n        ref List<Coordinate>? best,\n        ref int bestHits)\n    {\n        var row = horizontal ? coordinate.Row : coordinate.Row - offset;\n        var col = horizontal ? coordinate.Col - offset : coordinate.Col;\n        var cells = new List<Coordinate>(size);\n        for (var i = 0; i < size; i++)\n        {\n            var cell = new Coordinate(row + (horizontal ? 0 : i), col + (horizontal ? i : 0));\n            if (!cell.IsValid || _misses.Contains(cell) || _sunkCells.Contains(cell))\n            {\n                return;\n            }\n\n            cells.Add(cell);\n        }\n\n        var hits = cells.Count(_hits.Contains);\n        if (hits > bestHits)\n        {\n            best = cells;\n            bestHits = hits;\n        }\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Session/MultiplayerSession.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 7,
+      "bytes": 1096,
+      "lines": 43,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [],
+      "cycle": false,
+      "content": "using Battleship.Shared;\nusing Battleship.Web.Game;\n\nnamespace Battleship.Web.Session;\n\npublic enum Side\n{\n    Self,\n    Peer\n}\n\npublic enum MultiplayerPhase\n{\n    Connecting,\n    WaitingForPeer,\n    Placement,\n    WaitingForReady,\n    Combat,\n    GameOver,\n    Error\n}\n\npublic sealed record ChatEntry(Side Side, string Text);\n\npublic sealed class MultiplayerSession\n{\n    public string Role { get; init; } = \"host\";\n    public string? RoomCode { get; set; }\n    public Board OwnBoard { get; } = new();\n    public TargetBoard Target { get; } = new();\n    public bool HandshakeComplete { get; set; }\n    public bool ReadySent { get; set; }\n    public bool PeerReady { get; set; }\n    public int NextSeq { get; set; } = 1;\n    public int? PendingSeq { get; set; }\n    public Coordinate? PendingCoordinate { get; set; }\n    public int PeerLastSeq { get; set; }\n    public Side Turn { get; set; } = Side.Peer;\n    public Side? Winner { get; set; }\n    public string? EndReason { get; set; }\n    public List<ChatEntry> Chat { get; } = new();\n    public HashSet<ShipKind> EnemySunk { get; } = new();\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/AiRandom.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 8,
+      "bytes": 527,
+      "lines": 20,
+      "dependencies": [
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Web.Game;\n\nnamespace Battleship.Web.Ai;\n\ninternal static class AiRandom\n{\n    public static Coordinate PickUntried(AiView view, Random random)\n    {\n        var untried = view.Untried();\n        if (untried.Count == 0)\n        {\n            throw new InvalidOperationException(\"No untried cells remain.\");\n        }\n\n        return untried[random.Next(untried.Count)];\n    }\n\n    public static Coordinate Pick(List<Coordinate> candidates, Random random) =>\n        candidates[random.Next(candidates.Count)];\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/IAiStrategy.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 8,
+      "bytes": 131,
+      "lines": 8,
+      "dependencies": [
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiStrategyFactory.cs",
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Web.Game;\n\nnamespace Battleship.Web.Ai;\n\npublic interface IAiStrategy\n{\n    Coordinate ChooseShot(AiView view);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 9,
+      "bytes": 315,
+      "lines": 15,
+      "dependencies": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiStrategyFactory.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Web.Game;\n\nnamespace Battleship.Web.Ai;\n\npublic sealed class EasyAiStrategy : IAiStrategy\n{\n    private readonly Random _random;\n\n    public EasyAiStrategy(Random random)\n    {\n        _random = random;\n    }\n\n    public Coordinate ChooseShot(AiView view) => AiRandom.PickUntried(view, _random);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/HardAiStrategy.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 9,
+      "bytes": 3557,
+      "lines": 124,
+      "dependencies": [
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs",
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiStrategyFactory.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Shared;\nusing Battleship.Web.Game;\n\nnamespace Battleship.Web.Ai;\n\npublic sealed class HardAiStrategy : IAiStrategy\n{\n    private const int HitPlacementWeight = 5;\n    private const int AdjacentHitBonus = 10;\n\n    private readonly Random _random;\n\n    public HardAiStrategy(Random random)\n    {\n        _random = random;\n    }\n\n    public Coordinate ChooseShot(AiView view)\n    {\n        var counts = new Dictionary<Coordinate, int>();\n\n        foreach (var kind in view.RemainingShips)\n        {\n            var size = Fleet.SizeOf(kind);\n            foreach (var placement in EnumeratePlacements(view, size))\n            {\n                var coveredHits = placement.Count(cell => view.Hits.Contains(cell));\n                var weight = 1 + (coveredHits * HitPlacementWeight);\n                foreach (var cell in placement)\n                {\n                    if (view.IsUntried(cell))\n                    {\n                        counts[cell] = counts.GetValueOrDefault(cell) + weight;\n                    }\n                }\n            }\n        }\n\n        var bestScore = int.MinValue;\n        var highest = new List<Coordinate>();\n        foreach (var pair in counts)\n        {\n            var score = pair.Value + (IsAdjacentToHit(view, pair.Key) ? AdjacentHitBonus : 0);\n\n            if (score > bestScore)\n            {\n                bestScore = score;\n                highest.Clear();\n                highest.Add(pair.Key);\n            }\n            else if (score == bestScore)\n            {\n                highest.Add(pair.Key);\n            }\n        }\n\n        if (highest.Count == 0)\n        {\n            return AiRandom.PickUntried(view, _random);\n        }\n\n        return AiRandom.Pick(highest, _random);\n    }\n\n    private static bool IsAdjacentToHit(AiView view, Coordinate cell)\n    {\n        foreach (var hit in view.Hits)\n        {\n            var rowDistance = Math.Abs(hit.Row - cell.Row);\n            var colDistance = Math.Abs(hit.Col - cell.Col);\n            if (rowDistance + colDistance == 1)\n            {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    private static IEnumerable<List<Coordinate>> EnumeratePlacements(AiView view, int size)\n    {\n        for (var row = 0; row < BoardCoords.Size; row++)\n        {\n            for (var col = 0; col < BoardCoords.Size; col++)\n            {\n                var horizontal = BuildPlacement(view, new Coordinate(row, col), size, horizontal: true);\n                if (horizontal is not null)\n                {\n                    yield return horizontal;\n                }\n\n                var vertical = BuildPlacement(view, new Coordinate(row, col), size, horizontal: false);\n                if (vertical is not null)\n                {\n                    yield return vertical;\n                }\n            }\n        }\n    }\n\n    private static List<Coordinate>? BuildPlacement(AiView view, Coordinate start, int size, bool horizontal)\n    {\n        var cells = new List<Coordinate>(size);\n        for (var i = 0; i < size; i++)\n        {\n            var row = start.Row + (horizontal ? 0 : i);\n            var col = start.Col + (horizontal ? i : 0);\n            if (!BoardCoords.InBounds(row, col))\n            {\n                return null;\n            }\n\n            var cell = new Coordinate(row, col);\n            if (view.Misses.Contains(cell) || view.SunkCells.Contains(cell))\n            {\n                return null;\n            }\n\n            cells.Add(cell);\n        }\n\n        return cells;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/MediumAiStrategy.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 9,
+      "bytes": 2138,
+      "lines": 64,
+      "dependencies": [
+        "src/Battleship.Web/Ai/AiRandom.cs",
+        "src/Battleship.Web/Ai/AiView.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Game/Board.cs",
+        "src/Battleship.Web/Game/BoardView.cs",
+        "src/Battleship.Web/Game/CellView.cs",
+        "src/Battleship.Web/Game/Coordinate.cs",
+        "src/Battleship.Web/Game/Ship.cs",
+        "src/Battleship.Web/Game/ShipDefinition.cs",
+        "src/Battleship.Web/Game/ShotResolver.cs",
+        "src/Battleship.Web/Game/ShotResult.cs",
+        "src/Battleship.Web/Game/TargetBoard.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Web/Ai/AiStrategyFactory.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Web.Game;\n\nnamespace Battleship.Web.Ai;\n\npublic sealed class MediumAiStrategy : IAiStrategy\n{\n    private readonly Random _random;\n\n    public MediumAiStrategy(Random random)\n    {\n        _random = random;\n    }\n\n    public Coordinate ChooseShot(AiView view)\n    {\n        if (view.Hits.Count == 0)\n        {\n            return AiRandom.PickUntried(view, _random);\n        }\n\n        var lineExtensions = new HashSet<Coordinate>();\n        foreach (var rowGroup in view.Hits.GroupBy(h => h.Row).Where(g => g.Count() >= 2))\n        {\n            var min = rowGroup.Min(c => c.Col);\n            var max = rowGroup.Max(c => c.Col);\n            AddIfUntried(view, lineExtensions, new Coordinate(rowGroup.Key, min - 1));\n            AddIfUntried(view, lineExtensions, new Coordinate(rowGroup.Key, max + 1));\n        }\n\n        foreach (var colGroup in view.Hits.GroupBy(h => h.Col).Where(g => g.Count() >= 2))\n        {\n            var min = colGroup.Min(c => c.Row);\n            var max = colGroup.Max(c => c.Row);\n            AddIfUntried(view, lineExtensions, new Coordinate(min - 1, colGroup.Key));\n            AddIfUntried(view, lineExtensions, new Coordinate(max + 1, colGroup.Key));\n        }\n\n        if (lineExtensions.Count > 0)\n        {\n            return AiRandom.Pick(lineExtensions.ToList(), _random);\n        }\n\n        var adjacent = new HashSet<Coordinate>();\n        foreach (var hit in view.Hits)\n        {\n            AddIfUntried(view, adjacent, new Coordinate(hit.Row - 1, hit.Col));\n            AddIfUntried(view, adjacent, new Coordinate(hit.Row + 1, hit.Col));\n            AddIfUntried(view, adjacent, new Coordinate(hit.Row, hit.Col - 1));\n            AddIfUntried(view, adjacent, new Coordinate(hit.Row, hit.Col + 1));\n        }\n\n        return adjacent.Count > 0\n            ? AiRandom.Pick(adjacent.ToList(), _random)\n            : AiRandom.PickUntried(view, _random);\n    }\n\n    private static void AddIfUntried(AiView view, HashSet<Coordinate> candidates, Coordinate coordinate)\n    {\n        if (view.IsUntried(coordinate))\n        {\n            candidates.Add(coordinate);\n        }\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Web/Ai/AiStrategyFactory.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 10,
+      "bytes": 311,
+      "lines": 11,
+      "dependencies": [
+        "src/Battleship.Web/Ai/EasyAiStrategy.cs",
+        "src/Battleship.Web/Ai/HardAiStrategy.cs",
+        "src/Battleship.Web/Ai/IAiStrategy.cs",
+        "src/Battleship.Web/Ai/MediumAiStrategy.cs"
+      ],
+      "dependents": [],
+      "cycle": false,
+      "content": "namespace Battleship.Web.Ai;\n\npublic static class AiStrategyFactory\n{\n    public static IAiStrategy Create(string difficulty, Random random) => difficulty switch\n    {\n        \"easy\" => new EasyAiStrategy(random),\n        \"hard\" => new HardAiStrategy(random),\n        _ => new MediumAiStrategy(random)\n    };\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Api/RoomApi.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 8,
+      "bytes": 2816,
+      "lines": 91,
+      "dependencies": [
+        "src/Battleship.Server/Hosting/HttpProblem.cs",
+        "src/Battleship.Server/Hosting/SecurityHeadersMiddleware.cs",
+        "src/Battleship.Server/Hosting/StaticContent.cs",
+        "src/Battleship.Server/Options/BattleshipOptions.cs",
+        "src/Battleship.Server/Options/OptionsProvider.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Server/Rooms/RoomRegistry.cs",
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Program.cs"
+      ],
+      "cycle": false,
+      "content": "using System.Text.Json;\nusing Battleship.Server.Hosting;\nusing Battleship.Server.Options;\nusing Battleship.Server.Rooms;\nusing Battleship.Shared;\n\nnamespace Battleship.Server.Api;\n\npublic sealed class RoomApi\n{\n    private readonly RoomRegistry _registry;\n    private readonly RoomCodeGenerator _codes;\n    private readonly OptionsProvider _options;\n    private readonly ILogger<RoomApi> _logger;\n\n    public RoomApi(\n        RoomRegistry registry,\n        RoomCodeGenerator codes,\n        OptionsProvider options,\n        ILogger<RoomApi> logger)\n    {\n        _registry = registry;\n        _codes = codes;\n        _options = options;\n        _logger = logger;\n    }\n\n    public async Task CreateAsync(HttpContext context)\n    {\n        var options = _options.Get();\n        if (_registry.Count >= options.MaxRooms)\n        {\n            await HttpProblem.WriteAsync(\n                context,\n                StatusCodes.Status409Conflict,\n                \"Conflict\",\n                \"The maximum number of live rooms has been reached.\");\n            return;\n        }\n\n        for (var attempt = 0; attempt < options.RoomCodeAttempts; attempt++)\n        {\n            var code = _codes.Generate();\n            var room = new Room(code, DateTimeOffset.UtcNow);\n            if (!_registry.TryAdd(room))\n            {\n                continue;\n            }\n\n            _logger.LogInformation(\"room_created room={RoomCode}\", code);\n            context.Response.StatusCode = StatusCodes.Status201Created;\n            context.Response.Headers.Location = $\"/api/rooms/{code}\";\n            await context.Response.WriteAsJsonAsync(new { roomCode = code });\n            return;\n        }\n\n        _logger.LogWarning(\"room_created_failed reason=no_code_available\");\n        await HttpProblem.WriteAsync(\n            context,\n            StatusCodes.Status409Conflict,\n            \"Conflict\",\n            \"No room code is currently available.\");\n    }\n\n    public async Task GetAsync(HttpContext context, string roomCode)\n    {\n        var code = (roomCode ?? string.Empty).ToUpperInvariant();\n        if (!ProtocolInfo.IsValidRoomCode(code))\n        {\n            await HttpProblem.WriteAsync(\n                context,\n                StatusCodes.Status400BadRequest,\n                \"Validation Failed\",\n                \"The room code must be 6 characters from A-H, J-N, P-Z and 2-9.\");\n            return;\n        }\n\n        var room = _registry.Get(code);\n        if (room is null)\n        {\n            await HttpProblem.WriteAsync(\n                context,\n                StatusCodes.Status404NotFound,\n                \"Not Found\",\n                \"No room with that code exists.\");\n            return;\n        }\n\n        await context.Response.WriteAsJsonAsync(new { participants = room.ParticipantCount });\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Background/RoomReaper.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 8,
+      "bytes": 2614,
+      "lines": 89,
+      "dependencies": [
+        "src/Battleship.Server/Options/BattleshipOptions.cs",
+        "src/Battleship.Server/Options/OptionsProvider.cs",
+        "src/Battleship.Server/RateLimiting/IpRateLimiter.cs",
+        "src/Battleship.Server/RateLimiting/TokenBucket.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Server/Rooms/RoomRegistry.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Program.cs"
+      ],
+      "cycle": false,
+      "content": "using Battleship.Server.Options;\nusing Battleship.Server.RateLimiting;\nusing Battleship.Server.Rooms;\n\nnamespace Battleship.Server.Background;\n\npublic sealed class RoomReaper : BackgroundService\n{\n    private readonly RoomRegistry _registry;\n    private readonly OptionsProvider _options;\n    private readonly IpRateLimiter _ipLimiter;\n    private readonly ILogger<RoomReaper> _logger;\n\n    public RoomReaper(\n        RoomRegistry registry,\n        OptionsProvider options,\n        IpRateLimiter ipLimiter,\n        ILogger<RoomReaper> logger)\n    {\n        _registry = registry;\n        _options = options;\n        _ipLimiter = ipLimiter;\n        _logger = logger;\n    }\n\n    protected override async Task ExecuteAsync(CancellationToken stoppingToken)\n    {\n        var options = _options.Get();\n        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(options.ReaperIntervalSeconds));\n        try\n        {\n            while (await timer.WaitForNextTickAsync(stoppingToken))\n            {\n                try\n                {\n                    await SweepAsync();\n                }\n                catch (Exception ex)\n                {\n                    _logger.LogError(ex, \"room_reaper_failed\");\n                }\n            }\n        }\n        catch (OperationCanceledException)\n        {\n            // Host is stopping.\n        }\n    }\n\n    private async Task SweepAsync()\n    {\n        var options = _options.Get();\n        var now = DateTimeOffset.UtcNow;\n        var idleTimeout = TimeSpan.FromSeconds(options.RoomIdleTimeoutSeconds);\n        var maxLifetime = TimeSpan.FromMinutes(options.RoomMaxLifetimeMinutes);\n\n        foreach (var room in _registry.Snapshot())\n        {\n            if (!room.IsExpired(now, idleTimeout, maxLifetime))\n            {\n                continue;\n            }\n\n            if (!room.TryMarkClosed())\n            {\n                continue;\n            }\n\n            var participants = room.SnapshotParticipants();\n            foreach (var participant in participants)\n            {\n                participant.EnqueueClose(1001, \"room expired\");\n            }\n\n            if (_registry.TryRemove(room))\n            {\n                _logger.LogInformation(\"room_expired room={RoomCode}\", room.Code);\n                _logger.LogInformation(\"room_disposed room={RoomCode}\", room.Code);\n            }\n\n            foreach (var participant in participants)\n            {\n                await participant.CompleteAsync(TimeSpan.FromSeconds(options.SendTimeoutSeconds));\n            }\n        }\n\n        _ipLimiter.Cleanup(TimeSpan.FromMinutes(10));\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Program.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "entry_point",
+      "depth": 9,
+      "bytes": 3558,
+      "lines": 107,
+      "dependencies": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Hosting/HttpProblem.cs",
+        "src/Battleship.Server/Hosting/SecurityHeadersMiddleware.cs",
+        "src/Battleship.Server/Hosting/StaticContent.cs",
+        "src/Battleship.Server/Options/BattleshipOptions.cs",
+        "src/Battleship.Server/Options/OptionsProvider.cs",
+        "src/Battleship.Server/RateLimiting/IpRateLimiter.cs",
+        "src/Battleship.Server/RateLimiting/TokenBucket.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/Outbound.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Server/Rooms/RoomRegistry.cs",
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [],
+      "cycle": false,
+      "content": "using Battleship.Server.Api;\nusing Battleship.Server.Background;\nusing Battleship.Server.Hosting;\nusing Battleship.Server.Options;\nusing Battleship.Server.RateLimiting;\nusing Battleship.Server.Realtime;\nusing Battleship.Server.Rooms;\nusing Battleship.Shared;\nusing Microsoft.AspNetCore.ResponseCompression;\nusing Microsoft.AspNetCore.StaticFiles;\n\nvar builder = WebApplication.CreateBuilder(args);\n\nbuilder.Services\n    .AddOptions<BattleshipOptions>()\n    .Bind(builder.Configuration.GetSection(BattleshipOptions.SectionName));\n\nbuilder.Services.AddResponseCompression(options =>\n{\n    options.EnableForHttps = true;\n    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]\n    {\n        \"application/wasm\",\n        \"application/octet-stream\"\n    });\n});\n\nbuilder.Services.AddSingleton<OptionsProvider>();\nbuilder.Services.AddSingleton<ProtocolCodec>();\nbuilder.Services.AddSingleton<RoomRegistry>();\nbuilder.Services.AddSingleton<RoomCodeGenerator>();\nbuilder.Services.AddSingleton<IpRateLimiter>();\nbuilder.Services.AddSingleton<MessageRelay>();\nbuilder.Services.AddSingleton<RoomSocketHandler>();\nbuilder.Services.AddSingleton<RoomApi>();\nbuilder.Services.AddHostedService<RoomReaper>();\n\nvar app = builder.Build();\nvar startupOptions = app.Services.GetRequiredService<OptionsProvider>().Get();\n\napp.UseMiddleware<SecurityHeadersMiddleware>();\napp.UseResponseCompression();\napp.UseWebSockets(new WebSocketOptions\n{\n    KeepAliveInterval = TimeSpan.FromSeconds(startupOptions.KeepAliveSeconds)\n});\n\napp.UseBlazorFrameworkFiles();\napp.UseStaticFiles(new StaticFileOptions\n{\n    ContentTypeProvider = StaticContent.Types,\n    OnPrepareResponse = StaticContent.Prepare\n});\n\napp.Use(async (context, next) =>\n{\n    if (context.Request.Path.StartsWithSegments(\"/api\"))\n    {\n        context.Response.Headers[\"Cache-Control\"] = \"no-store\";\n        var options = context.RequestServices.GetRequiredService<OptionsProvider>().Get();\n        var isCreate = HttpMethods.IsPost(context.Request.Method);\n        var permits = isCreate\n            ? options.CreateRoomPermitsPerMinute\n            : options.ConnectPermitsPerMinute;\n        var limiter = context.RequestServices.GetRequiredService<IpRateLimiter>();\n        if (!limiter.TryAcquire(context, isCreate ? \"create\" : \"connect\", permits))\n        {\n            await HttpProblem.WriteAsync(\n                context,\n                StatusCodes.Status429TooManyRequests,\n                \"Too Many Requests\",\n                \"The rate limit for this client IP has been exceeded.\");\n            return;\n        }\n    }\n\n    await next();\n});\n\napp.MapPost(\"/api/rooms\", (HttpContext context) =>\n    app.Services.GetRequiredService<RoomApi>().CreateAsync(context));\n\napp.MapGet(\"/api/rooms/{roomCode}\", (HttpContext context) =>\n{\n    var roomCode = (string?)context.Request.RouteValues[\"roomCode\"] ?? string.Empty;\n    return app.Services.GetRequiredService<RoomApi>().GetAsync(context, roomCode);\n});\n\napp.MapGet(\"/ws/rooms/{roomCode}\", (HttpContext context) =>\n{\n    var roomCode = (string?)context.Request.RouteValues[\"roomCode\"] ?? string.Empty;\n    return app.Services.GetRequiredService<RoomSocketHandler>().HandleAsync(context, roomCode);\n});\n\napp.MapFallback(async (HttpContext context) =>\n{\n    if (context.Request.Path.StartsWithSegments(\"/api\")\n        || context.Request.Path.StartsWithSegments(\"/ws\"))\n    {\n        context.Response.StatusCode = StatusCodes.Status404NotFound;\n        return;\n    }\n\n    await StaticContent.WriteIndexAsync(context, app.Environment);\n});\n\napp.Run();\n"
+    },
+    {
+      "path": "src/Battleship.Server/Realtime/MessageRelay.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 6,
+      "bytes": 2089,
+      "lines": 65,
+      "dependencies": [
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Server/Rooms/RoomRegistry.cs",
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs"
+      ],
+      "cycle": true,
+      "content": "using Battleship.Server.Rooms;\nusing Battleship.Shared;\n\nnamespace Battleship.Server.Realtime;\n\npublic sealed class MessageRelay\n{\n    private readonly ProtocolCodec _codec;\n    private readonly ILogger<MessageRelay> _logger;\n\n    public MessageRelay(ProtocolCodec codec, ILogger<MessageRelay> logger)\n    {\n        _codec = codec;\n        _logger = logger;\n    }\n\n    public bool Relay(Room room, Participant sender, ProtocolMessage message)\n    {\n        if (message.V != ProtocolInfo.Version)\n        {\n            _logger.LogWarning(\n                \"message_rejected room={RoomCode} role={Role} reason=version\",\n                room.Code,\n                sender.Role);\n            sender.EnqueueText(_codec.Serialize(ProtocolMessage.Error(\n                ProtocolErrorCode.VERSION_MISMATCH,\n                \"Protocol version mismatch. Reload the page.\")));\n            sender.EnqueueClose(1002, \"version mismatch\");\n            return false;\n        }\n\n        var peer = room.PeerOf(sender);\n        if (peer is null)\n        {\n            _logger.LogInformation(\n                \"message_rejected room={RoomCode} role={Role} reason=no_peer\",\n                room.Code,\n                sender.Role);\n            sender.EnqueueText(_codec.Serialize(ProtocolMessage.Error(\n                ProtocolErrorCode.CONFLICT,\n                \"No opponent is connected.\")));\n            return true;\n        }\n\n        room.Touch();\n        if (!peer.EnqueueText(_codec.Serialize(message)))\n        {\n            _logger.LogWarning(\n                \"message_rejected room={RoomCode} role={Role} reason=peer_unavailable\",\n                room.Code,\n                sender.Role);\n            sender.EnqueueText(_codec.Serialize(ProtocolMessage.Error(\n                ProtocolErrorCode.FATAL,\n                \"The opponent connection is unavailable.\")));\n            return false;\n        }\n\n        _logger.LogInformation(\n            \"message_relayed room={RoomCode} type={Type} seq={Seq}\",\n            room.Code,\n            message.Type,\n            message.Seq);\n        return true;\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 4,
+      "bytes": 8964,
+      "lines": 270,
+      "dependencies": [
+        "src/Battleship.Server/Hosting/HttpProblem.cs",
+        "src/Battleship.Server/Hosting/SecurityHeadersMiddleware.cs",
+        "src/Battleship.Server/Hosting/StaticContent.cs",
+        "src/Battleship.Server/Options/BattleshipOptions.cs",
+        "src/Battleship.Server/Options/OptionsProvider.cs",
+        "src/Battleship.Server/RateLimiting/IpRateLimiter.cs",
+        "src/Battleship.Server/RateLimiting/TokenBucket.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs",
+        "src/Battleship.Server/Rooms/RoomCodeGenerator.cs",
+        "src/Battleship.Server/Rooms/RoomRegistry.cs",
+        "src/Battleship.Shared/BoardCoords.cs",
+        "src/Battleship.Shared/ProtocolCodec.cs",
+        "src/Battleship.Shared/ProtocolInfo.cs",
+        "src/Battleship.Shared/ProtocolMessage.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/Room.cs"
+      ],
+      "cycle": true,
+      "content": "using System.Net.WebSockets;\nusing Battleship.Server.Hosting;\nusing Battleship.Server.Options;\nusing Battleship.Server.RateLimiting;\nusing Battleship.Server.Rooms;\nusing Battleship.Shared;\n\nnamespace Battleship.Server.Realtime;\n\npublic sealed class RoomSocketHandler\n{\n    private readonly RoomRegistry _registry;\n    private readonly OptionsProvider _options;\n    private readonly IpRateLimiter _ipLimiter;\n    private readonly MessageRelay _relay;\n    private readonly ProtocolCodec _codec;\n    private readonly ILogger<RoomSocketHandler> _logger;\n\n    public RoomSocketHandler(\n        RoomRegistry registry,\n        OptionsProvider options,\n        IpRateLimiter ipLimiter,\n        MessageRelay relay,\n        ProtocolCodec codec,\n        ILogger<RoomSocketHandler> logger)\n    {\n        _registry = registry;\n        _options = options;\n        _ipLimiter = ipLimiter;\n        _relay = relay;\n        _codec = codec;\n        _logger = logger;\n    }\n\n    public async Task HandleAsync(HttpContext context, string roomCode)\n    {\n        if (!context.WebSockets.IsWebSocketRequest)\n        {\n            await HttpProblem.WriteAsync(\n                context,\n                StatusCodes.Status400BadRequest,\n                \"Validation Failed\",\n                \"A WebSocket upgrade request is required.\");\n            return;\n        }\n\n        var options = _options.Get();\n        WebSocket socket;\n        try\n        {\n            socket = await context.WebSockets.AcceptWebSocketAsync();\n        }\n        catch (Exception ex)\n        {\n            _logger.LogWarning(ex, \"websocket_upgrade_failed\");\n            return;\n        }\n\n        var clientKey = IpRateLimiter.ClientKey(context);\n        if (!_ipLimiter.TryAcquire(\"connect\", clientKey, options.ConnectPermitsPerMinute))\n        {\n            _logger.LogWarning(\"rate_limited phase=connection ip={ClientIp}\", clientKey);\n            await CloseSocketAsync(socket, 4029, \"connection rate limit exceeded\", options.SendTimeoutSeconds);\n            return;\n        }\n\n        var code = (roomCode ?? string.Empty).ToUpperInvariant();\n        var roleText = context.Request.Query[\"role\"].ToString().ToLowerInvariant();\n        var isHost = roleText == \"host\";\n        if (!ProtocolInfo.IsValidRoomCode(code) || (roleText != \"host\" && roleText != \"client\"))\n        {\n            await CloseSocketAsync(socket, 4400, \"invalid room code or role\", options.SendTimeoutSeconds);\n            return;\n        }\n\n        var room = _registry.Get(code);\n        if (room is null)\n        {\n            await CloseSocketAsync(socket, 4004, \"room not found\", options.SendTimeoutSeconds);\n            return;\n        }\n\n        var role = isHost ? RoomRole.Host : RoomRole.Client;\n        await using var participant = new Participant(\n            socket,\n            role,\n            options.SendTimeoutSeconds,\n            options.MessageBurst,\n            options.MessagesPerSecond);\n\n        var assignment = room.Assign(participant);\n        switch (assignment)\n        {\n            case RoleAssignResult.Ok:\n                break;\n            case RoleAssignResult.HostNotConnected:\n            case RoleAssignResult.RoomClosed:\n                await CloseSocketAsync(socket, 4004, \"room not found\", options.SendTimeoutSeconds);\n                return;\n            default:\n                _logger.LogInformation(\n                    \"room_full_rejected room={RoomCode} role={Role}\",\n                    room.Code,\n                    role);\n                await CloseSocketAsync(socket, 4009, \"room slot is already taken\", options.SendTimeoutSeconds);\n                return;\n        }\n\n        _logger.LogInformation(\n            \"room_joined room={RoomCode} role={Role} participant={ParticipantId}\",\n            room.Code,\n            role,\n            participant.Id);\n\n        participant.Start(_logger);\n        try\n        {\n            await ReceiveLoopAsync(room, participant, context.RequestAborted);\n        }\n        catch (OperationCanceledException)\n        {\n            // The request was aborted.\n        }\n        catch (Exception ex)\n        {\n            _logger.LogWarning(ex, \"socket_failed room={RoomCode} participant={ParticipantId}\", room.Code, participant.Id);\n            participant.EnqueueClose(1011, \"internal error\");\n        }\n        finally\n        {\n            await DisconnectAsync(room, participant, options);\n        }\n    }\n\n    private async Task ReceiveLoopAsync(Room room, Participant participant, CancellationToken cancellationToken)\n    {\n        var buffer = new byte[ProtocolInfo.MaxMessageBytes + 1];\n        using var messageBuffer = new MemoryStream(ProtocolInfo.MaxMessageBytes);\n\n        while (participant.Socket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)\n        {\n            WebSocketReceiveResult result;\n            try\n            {\n                result = await participant.Socket.ReceiveAsync(\n                    new ArraySegment<byte>(buffer),\n                    cancellationToken);\n            }\n            catch (OperationCanceledException)\n            {\n                break;\n            }\n            catch (WebSocketException)\n            {\n                break;\n            }\n            catch (ObjectDisposedException)\n            {\n                break;\n            }\n\n            if (result.MessageType == WebSocketMessageType.Close)\n            {\n                break;\n            }\n\n            if (result.MessageType == WebSocketMessageType.Binary)\n            {\n                _logger.LogInformation(\"message_rejected room={RoomCode} reason=binary\", room.Code);\n                participant.EnqueueClose(1003, \"binary frames are not supported\");\n                break;\n            }\n\n            if (messageBuffer.Length + result.Count > ProtocolInfo.MaxMessageBytes)\n            {\n                _logger.LogInformation(\"message_rejected room={RoomCode} reason=too_large\", room.Code);\n                participant.EnqueueClose(1009, \"message too large\");\n                break;\n            }\n\n            messageBuffer.Write(buffer, 0, result.Count);\n            if (!result.EndOfMessage)\n            {\n                continue;\n            }\n\n            var payload = messageBuffer.ToArray();\n            messageBuffer.SetLength(0);\n\n            if (!participant.TryConsumeMessage())\n            {\n                _logger.LogInformation(\n                    \"rate_limited room={RoomCode} participant={ParticipantId}\",\n                    room.Code,\n                    participant.Id);\n                participant.EnqueueText(_codec.Serialize(ProtocolMessage.Error(\n                    ProtocolErrorCode.RATE_LIMITED,\n                    \"Too many messages; slow down.\")));\n                continue;\n            }\n\n            if (!_codec.TryDeserializeUtf8(payload, out var message, out var error) || message is null)\n            {\n                _logger.LogInformation(\n                    \"message_rejected room={RoomCode} participant={ParticipantId} reason=schema\",\n                    room.Code,\n                    participant.Id);\n                participant.EnqueueText(_codec.Serialize(ProtocolMessage.Error(\n                    ProtocolErrorCode.VALIDATION,\n                    error)));\n                continue;\n            }\n\n            if (!_relay.Relay(room, participant, message))\n            {\n                break;\n            }\n        }\n    }\n\n    private async Task DisconnectAsync(Room room, Participant participant, BattleshipOptions options)\n    {\n        var (removed, peer) = room.Remove(participant);\n        if (!removed)\n        {\n            return;\n        }\n\n        _logger.LogInformation(\n            \"participant_disconnected room={RoomCode} role={Role} participant={ParticipantId}\",\n            room.Code,\n            participant.Role,\n            participant.Id);\n\n        await participant.CompleteAsync(TimeSpan.FromSeconds(options.SendTimeoutSeconds));\n\n        if (peer is not null)\n        {\n            peer.EnqueueClose(4001, \"peer disconnected\");\n        }\n\n        if (room.TryCloseIfEmpty() && _registry.TryRemove(room))\n        {\n            _logger.LogInformation(\"room_disposed room={RoomCode}\", room.Code);\n        }\n    }\n\n    private static async Task CloseSocketAsync(WebSocket socket, int closeCode, string reason, int timeoutSeconds)\n    {\n        try\n        {\n            if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)\n            {\n                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(Math.Max(1, timeoutSeconds)));\n                await socket.CloseOutputAsync(\n                    (WebSocketCloseStatus)closeCode,\n                    reason,\n                    timeout.Token);\n            }\n        }\n        catch\n        {\n            // The client may already have gone away.\n        }\n        finally\n        {\n            socket.Dispose();\n        }\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Rooms/Participant.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 7,
+      "bytes": 4910,
+      "lines": 159,
+      "dependencies": [
+        "src/Battleship.Server/RateLimiting/IpRateLimiter.cs",
+        "src/Battleship.Server/RateLimiting/TokenBucket.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/Outbound.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Room.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Room.cs"
+      ],
+      "cycle": true,
+      "content": "using System.Net.WebSockets;\nusing System.Text;\nusing System.Threading.Channels;\nusing Battleship.Server.RateLimiting;\nusing Battleship.Server.Realtime;\n\nnamespace Battleship.Server.Rooms;\n\npublic sealed class Participant : IAsyncDisposable\n{\n    private readonly Channel<Outbound> _queue =\n        Channel.CreateUnbounded<Outbound>(new UnboundedChannelOptions\n        {\n            SingleReader = true,\n            SingleWriter = false,\n            AllowSynchronousContinuations = false\n        });\n\n    private readonly CancellationTokenSource _cts = new();\n    private readonly int _sendTimeoutSeconds;\n    private Task? _writer;\n    private int _completed;\n\n    public Participant(WebSocket socket, RoomRole role, int sendTimeoutSeconds, int messageBurst, int messagesPerSecond)\n    {\n        Socket = socket;\n        Role = role;\n        _sendTimeoutSeconds = Math.Max(1, sendTimeoutSeconds);\n        Messages = new TokenBucket(messageBurst, messagesPerSecond);\n    }\n\n    public string Id { get; } = Guid.NewGuid().ToString(\"N\");\n    public WebSocket Socket { get; }\n    public RoomRole Role { get; }\n    public TokenBucket Messages { get; }\n\n    public void Start(ILogger logger) => _writer ??= Task.Run(() => WriteLoopAsync(logger));\n\n    public bool TryConsumeMessage() => Messages.TryTake();\n\n    public bool EnqueueText(string json) =>\n        Volatile.Read(ref _completed) == 0 && _queue.Writer.TryWrite(Outbound.Message(json));\n\n    public bool EnqueueClose(int closeCode, string? reason) =>\n        _queue.Writer.TryWrite(Outbound.Close(closeCode, reason));\n\n    public async Task CompleteAsync(TimeSpan timeout)\n    {\n        if (Interlocked.Exchange(ref _completed, 1) == 1)\n        {\n            return;\n        }\n\n        _queue.Writer.TryComplete();\n        if (_writer is not null)\n        {\n            try\n            {\n                await _writer.WaitAsync(timeout);\n            }\n            catch (TimeoutException)\n            {\n                _cts.Cancel();\n                try\n                {\n                    await _writer;\n                }\n                catch\n                {\n                    // The writer is stopped; nothing else to flush.\n                }\n            }\n            catch\n            {\n                // A failed writer has already aborted the socket.\n            }\n        }\n\n        try\n        {\n            if (Socket.State is WebSocketState.Open or WebSocketState.CloseReceived)\n            {\n                await Socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);\n            }\n        }\n        catch\n        {\n            // The peer may already be gone.\n        }\n\n        Socket.Dispose();\n        _cts.Dispose();\n    }\n\n    public async ValueTask DisposeAsync() =>\n        await CompleteAsync(TimeSpan.FromSeconds(_sendTimeoutSeconds + 1));\n\n    private async Task WriteLoopAsync(ILogger logger)\n    {\n        try\n        {\n            await foreach (var item in _queue.Reader.ReadAllAsync(_cts.Token))\n            {\n                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);\n                timeout.CancelAfter(TimeSpan.FromSeconds(_sendTimeoutSeconds));\n                try\n                {\n                    if (item.CloseCode is not null)\n                    {\n                        if (Socket.State is WebSocketState.Open or WebSocketState.CloseReceived)\n                        {\n                            await Socket.CloseOutputAsync(\n                                (WebSocketCloseStatus)item.CloseCode.Value,\n                                item.Reason,\n                                timeout.Token);\n                        }\n\n                        break;\n                    }\n\n                    if (Socket.State != WebSocketState.Open)\n                    {\n                        break;\n                    }\n\n                    var bytes = Encoding.UTF8.GetBytes(item.Text!);\n                    await Socket.SendAsync(\n                        new ArraySegment<byte>(bytes),\n                        WebSocketMessageType.Text,\n                        endOfMessage: true,\n                        timeout.Token);\n                }\n                catch (OperationCanceledException)\n                {\n                    Socket.Abort();\n                    break;\n                }\n                catch (WebSocketException)\n                {\n                    Socket.Abort();\n                    break;\n                }\n                catch (ObjectDisposedException)\n                {\n                    break;\n                }\n            }\n        }\n        catch (OperationCanceledException)\n        {\n            // Shutdown.\n        }\n        catch (Exception ex)\n        {\n            logger.LogWarning(ex, \"participant_writer_failed participant={ParticipantId}\", Id);\n            Socket.Abort();\n        }\n    }\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Rooms/Room.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 5,
+      "bytes": 4439,
+      "lines": 207,
+      "dependencies": [
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/Outbound.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Participant.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs",
+        "src/Battleship.Server/Rooms/Participant.cs",
+        "src/Battleship.Server/Rooms/RoomRegistry.cs"
+      ],
+      "cycle": true,
+      "content": "using Battleship.Server.Realtime;\n\nnamespace Battleship.Server.Rooms;\n\npublic enum RoomRole\n{\n    Host,\n    Client\n}\n\npublic enum RoleAssignResult\n{\n    Ok,\n    HostSlotTaken,\n    ClientSlotTaken,\n    HostNotConnected,\n    RoomClosed\n}\n\npublic sealed class Room\n{\n    private readonly object _sync = new();\n    private DateTimeOffset _lastActivity;\n\n    public Room(string code, DateTimeOffset createdAt)\n    {\n        Code = code;\n        CreatedAt = createdAt;\n        _lastActivity = createdAt;\n    }\n\n    public string Code { get; }\n    public DateTimeOffset CreatedAt { get; }\n    public Participant? Host { get; private set; }\n    public Participant? Client { get; private set; }\n    public bool IsClosed { get; private set; }\n\n    public int ParticipantCount\n    {\n        get\n        {\n            lock (_sync)\n            {\n                return CountCore;\n            }\n        }\n    }\n\n    public DateTimeOffset LastActivity\n    {\n        get\n        {\n            lock (_sync)\n            {\n                return _lastActivity;\n            }\n        }\n    }\n\n    public RoleAssignResult Assign(Participant participant)\n    {\n        lock (_sync)\n        {\n            if (IsClosed)\n            {\n                return RoleAssignResult.RoomClosed;\n            }\n\n            if (participant.Role == RoomRole.Host)\n            {\n                if (Host is not null)\n                {\n                    return RoleAssignResult.HostSlotTaken;\n                }\n\n                Host = participant;\n            }\n            else\n            {\n                if (Client is not null)\n                {\n                    return RoleAssignResult.ClientSlotTaken;\n                }\n\n                if (Host is null)\n                {\n                    return RoleAssignResult.HostNotConnected;\n                }\n\n                Client = participant;\n            }\n\n            _lastActivity = DateTimeOffset.UtcNow;\n            return RoleAssignResult.Ok;\n        }\n    }\n\n    public Participant? PeerOf(Participant participant)\n    {\n        lock (_sync)\n        {\n            if (Host is not null && Host.Id == participant.Id)\n            {\n                return Client;\n            }\n\n            if (Client is not null && Client.Id == participant.Id)\n            {\n                return Host;\n            }\n\n            return null;\n        }\n    }\n\n    public (bool Removed, Participant? Peer) Remove(Participant participant)\n    {\n        lock (_sync)\n        {\n            var removed = false;\n            if (Host is not null && Host.Id == participant.Id)\n            {\n                Host = null;\n                removed = true;\n            }\n            else if (Client is not null && Client.Id == participant.Id)\n            {\n                Client = null;\n                removed = true;\n            }\n\n            if (!removed)\n            {\n                return (false, null);\n            }\n\n            _lastActivity = DateTimeOffset.UtcNow;\n            return (true, Host ?? Client);\n        }\n    }\n\n    public void Touch()\n    {\n        lock (_sync)\n        {\n            _lastActivity = DateTimeOffset.UtcNow;\n        }\n    }\n\n    public bool TryCloseIfEmpty()\n    {\n        lock (_sync)\n        {\n            if (IsClosed || CountCore != 0)\n            {\n                return false;\n            }\n\n            IsClosed = true;\n            _lastActivity = DateTimeOffset.UtcNow;\n            return true;\n        }\n    }\n\n    public bool TryMarkClosed()\n    {\n        lock (_sync)\n        {\n            if (IsClosed)\n            {\n                return false;\n            }\n\n            IsClosed = true;\n            _lastActivity = DateTimeOffset.UtcNow;\n            return true;\n        }\n    }\n\n    public bool IsExpired(DateTimeOffset now, TimeSpan idleTimeout, TimeSpan maxLifetime)\n    {\n        lock (_sync)\n        {\n            if (IsClosed)\n            {\n                return false;\n            }\n\n            if (CountCore == 0 && now - _lastActivity >= idleTimeout)\n            {\n                return true;\n            }\n\n            return now - CreatedAt >= maxLifetime;\n        }\n    }\n\n    public Participant[] SnapshotParticipants()\n    {\n        lock (_sync)\n        {\n            return new[] { Host, Client }.Where(p => p is not null).Cast<Participant>().ToArray();\n        }\n    }\n\n    private int CountCore => (Host is not null ? 1 : 0) + (Client is not null ? 1 : 0);\n}\n"
+    },
+    {
+      "path": "src/Battleship.Server/Rooms/RoomRegistry.cs",
+      "language": "csharp",
+      "kind": "source",
+      "role": "module",
+      "depth": 1,
+      "bytes": 629,
+      "lines": 20,
+      "dependencies": [
+        "src/Battleship.Server/Rooms/Room.cs"
+      ],
+      "dependents": [
+        "src/Battleship.Server/Api/RoomApi.cs",
+        "src/Battleship.Server/Background/RoomReaper.cs",
+        "src/Battleship.Server/Program.cs",
+        "src/Battleship.Server/Realtime/MessageRelay.cs",
+        "src/Battleship.Server/Realtime/RoomSocketHandler.cs"
+      ],
+      "cycle": true,
+      "content": "using System.Collections.Concurrent;\n\nnamespace Battleship.Server.Rooms;\n\npublic sealed class RoomRegistry\n{\n    private readonly ConcurrentDictionary<string, Room> _rooms = new(StringComparer.Ordinal);\n\n    public int Count => _rooms.Count;\n\n    public bool TryAdd(Room room) => _rooms.TryAdd(room.Code, room);\n\n    public Room? Get(string code) => _rooms.TryGetValue(code, out var room) ? room : null;\n\n    public Room[] Snapshot() => _rooms.Values.ToArray();\n\n    public bool TryRemove(Room room) =>\n        ((ICollection<KeyValuePair<string, Room>>)_rooms)\n        .Remove(new KeyValuePair<string, Room>(room.Code, room));\n}\n"
+    }
+  ]
+}

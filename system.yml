@@ -1,0 +1,348 @@
+system:
+  system_name: web_battleship
+  system_ears_requirements:
+    - Web Battleship MUST support single-player Battleship against a local AI.
+    - Web Battleship MUST offer three single-player difficulty levels, easy, medium, and hard, selected before ship placement.
+    - Web Battleship MUST default single-player difficulty to medium when no valid difficulty is selected.
+    - Web Battleship MUST keep the selected difficulty fixed for the duration of a single-player game.
+    - Web Battleship MUST display the selected difficulty during a single-player game and on the game-over screen.
+    - Web Battleship MUST support two-player Battleship over a WebSocket connection relayed through the game server.
+    - Web Battleship MUST run as a browser application written in C# using Blazor WebAssembly on .NET 10, hosted by an ASP.NET Core server.
+    - Web Battleship MUST run in current versions of Chrome, Edge, Firefox, and Safari without plugins.
+    - Web Battleship MUST use a 10x10 board for each participant.
+    - Web Battleship MUST use the fleet Carrier(5), Battleship(4), Cruiser(3), Submarine(3), and Patrol Boat(2).
+    - Web Battleship MUST support manual and automatic ship placement.
+    - Web Battleship MUST support ship placement and targeting by mouse, touch, and keyboard input.
+    - Web Battleship MUST reject overlapping ships and placements outside board boundaries.
+    - Web Battleship MUST keep each participant's unhit ship positions private and never send them to the server or the opponent.
+    - Web Battleship MUST alternate turns after each valid shot.
+    - Web Battleship MUST reject invalid coordinates and repeated shots without consuming a turn.
+    - Web Battleship MUST report hit, miss, sunk ship, and game-over outcomes.
+    - Web Battleship MUST end combat when all five ships belonging to one participant are sunk.
+    - Web Battleship MUST provide a local AI that runs in the browser and chooses legal untried shots without inspecting hidden ship coordinates.
+    - Web Battleship MUST base every local AI decision only on its own shot history, the reported hit, miss, and sunk outcomes, and the sizes of ships not yet sunk.
+    - Web Battleship MUST make the easy local AI choose uniformly at random among untried cells.
+    - Web Battleship MUST make the medium local AI choose random untried cells until it scores a hit, then target untried cells orthogonally adjacent to unresolved hits until the hit ship is reported sunk.
+    - Web Battleship MUST make the hard local AI choose the untried cell with the highest count of legal placements of remaining ships consistent with known hits and misses, prioritising cells adjacent to unresolved hits and breaking ties randomly.
+    - Web Battleship MUST place AI ships randomly using automatic placement at every difficulty level.
+    - Web Battleship MUST use one host and one client joined to the same room through persistent WebSocket connections.
+    - Web Battleship MUST identify multiplayer rooms by a short random room code and reject a third participant joining a full room.
+    - Web Battleship MUST use ASP.NET Core WebSockets for real-time communication between browsers and the server.
+    - Web Battleship MUST use a versioned JSON message protocol, one message per WebSocket text frame, supporting HELLO, READY, SHOT, RESULT, CHAT, QUIT, and ERROR.
+    - Web Battleship MUST validate incoming protocol messages on both the server and the browser and associate shot results with the corresponding shot sequence.
+    - Web Battleship MUST allow multiplayer chat without changing the active turn.
+    - Web Battleship MUST maintain game state in browser memory and room state in server memory without requiring persistent storage.
+    - Web Battleship MUST close WebSocket connections and dispose room state when a participant quits, disconnects, or closes the page.
+    - Web Battleship MUST treat network messages as untrusted data, never evaluate them as code, and HTML-encode chat text before rendering.
+    - WHEN an unknown route is requested, Web Battleship MUST navigate to the menu at / without adding a history entry.
+    - WHEN a single-player route names a difficulty other than easy, medium, or hard, Web Battleship MUST navigate to /single/medium.
+    - WHEN the WebSocket closes during a multiplayer game without a QUIT, Web Battleship MUST end the game, show why it ended, and offer a return to the menu.
+    - WHEN a room has no connected participant for Battleship__RoomIdleTimeoutSeconds or exists longer than Battleship__RoomMaxLifetimeMinutes, the server MUST close its sockets and dispose it.
+    - WHEN a WebSocket frame exceeds ProtocolInfo.MaxMessageBytes or is binary, the server MUST close that socket without relaying the frame.
+    - The server MUST rate-limit room creation and room connections per client IP and messages per participant.
+    - The server MUST relay each valid message only to the other participant in the same room and MUST NOT store message payloads or log chat text.
+    - WHEN a socket requests role host for a room whose host slot is filled, or role client for a room whose client slot is filled, the server MUST close it with 4009; WHEN role client is requested before the host has connected, the server MUST close it with 4004.
+    - WHEN the server closes the socket with 4004, 4009, 4029, or 4400 before the handshake completes, Web Battleship MUST show NOT_FOUND, CONFLICT, RATE_LIMITED, or VALIDATION_FAILED respectively.
+
+actors:
+  - actor_category: human
+    actors:
+      - player
+      - multiplayer_host
+      - multiplayer_client
+  - actor_category: automated
+    actors:
+      - local_ai_easy
+      - local_ai_medium
+      - local_ai_hard
+      - room_relay
+
+---
+
+actor_flows:
+  - actor_category: human
+    flows:
+      - actor_flow: play_single_player
+        stage: resolved
+        as: player
+        want: Play Battleship against a local AI at a difficulty I choose
+        so_that: I can play without a network connection once the app has loaded, at a level that suits me
+        outline:
+          - Open the single-player page.
+          - Choose easy, medium, or hard difficulty.
+          - Place the human fleet and automatically place the AI fleet.
+          - Display the own and targeting boards with the selected difficulty.
+          - Alternate human and AI shots until one fleet is destroyed.
+          - Announce the winner and the difficulty played.
+          - Offer a rematch at the same difficulty or a return to difficulty selection.
+
+      - actor_flow: host_multiplayer
+        stage: resolved
+        as: multiplayer_host
+        want: Host a game in the browser
+        so_that: Another player can join
+        outline:
+          - Create a room on the server.
+          - Display the room code and a shareable join link.
+          - Open a WebSocket connection to the room.
+          - Wait for one client to join the room.
+          - Exchange protocol versions.
+          - Place the local fleet.
+          - Exchange ready signals.
+          - Take the first turn.
+          - Exchange shots and results until completion.
+
+      - actor_flow: join_multiplayer
+        stage: resolved
+        as: multiplayer_client
+        want: Join a remote Battleship game
+        so_that: I can play against the host
+        outline:
+          - Enter the room code or open the shared join link.
+          - Open a WebSocket connection to the room.
+          - Exchange protocol versions.
+          - Place the local fleet.
+          - Exchange ready signals.
+          - Wait for the host's first shot.
+          - Exchange shots and results until completion.
+
+      - actor_flow: multiplayer_chat
+        stage: resolved
+        as: multiplayer_client
+        want: Exchange chat messages
+        so_that: I can communicate with my opponent
+        outline:
+          - Send text over the established WebSocket connection.
+          - Display received messages.
+          - Preserve the current combat turn.
+
+  - actor_category: automated
+    flows:
+      - actor_flow: ai_easy_turn
+        stage: resolved
+        as: local_ai_easy
+        want: Choose a shot on the easy difficulty
+        so_that: New players face a forgiving opponent
+        outline:
+          - Collect all untried cells.
+          - Choose one cell uniformly at random.
+          - Fire and record the reported outcome.
+
+      - actor_flow: ai_medium_turn
+        stage: resolved
+        as: local_ai_medium
+        want: Choose a shot on the medium difficulty
+        so_that: Players face an opponent that follows up on hits
+        outline:
+          - If no unresolved hits exist, choose a random untried cell.
+          - If unresolved hits exist, choose an untried cell orthogonally adjacent to them, extending along the line when two or more hits align.
+          - Fire and record the reported outcome.
+          - Clear the hits belonging to a ship when it is reported sunk.
+
+      - actor_flow: ai_hard_turn
+        stage: resolved
+        as: local_ai_hard
+        want: Choose a shot on the hard difficulty
+        so_that: Experienced players face a strong opponent
+        outline:
+          - Enumerate every legal placement of each remaining ship that avoids known misses and sunk cells.
+          - Weight placements covering unresolved hits above other placements.
+          - Count weighted placements covering each untried cell.
+          - Choose the highest-scoring untried cell, breaking ties randomly.
+          - Fire and record the reported outcome.
+
+services:
+  - service_name: battleship_web
+    kind:
+      - Web
+    allowed_auth:
+      - none
+    middleware: []
+    language: C#
+    language_version: "14"
+    framework: Blazor WebAssembly
+    framework_version: ".NET 10"
+    deployment_targets:
+      - Static files served by battleship_server
+    url: https://host/
+    exposes:
+      - category: PAGE
+        address: /
+        auth: none
+        request: none
+        response:
+          status: none
+          fields:
+            - menu: html
+        errors: none
+
+      - category: PAGE
+        address: /single
+        auth: none
+        request: none
+        response:
+          status: none
+          fields:
+            - difficultyOptions: string[]
+        errors: none
+
+      - category: PAGE
+        address: /single/{difficulty}
+        auth: none
+        request:
+          - difficulty: enum[easy, medium, hard]
+        response:
+          status: none
+          fields:
+            - difficulty: string
+            - result: string
+        errors:
+          - VALIDATION_FAILED
+          - INTERNAL
+
+      - category: PAGE
+        address: /host
+        auth: none
+        request: none
+        response:
+          status: none
+          fields:
+            - roomCode: string
+            - result: string
+        errors:
+          - VALIDATION_FAILED
+          - UPSTREAM_UNAVAILABLE
+          - INTERNAL
+
+      - category: PAGE
+        address: /join/{roomCode}
+        auth: none
+        request:
+          - roomCode: string
+        response:
+          status: none
+          fields:
+            - result: string
+        errors:
+          - VALIDATION_FAILED
+          - NOT_FOUND
+          - CONFLICT
+          - UPSTREAM_UNAVAILABLE
+          - INTERNAL
+
+      - category: PAGE
+        address: /help
+        auth: none
+        request: none
+        response:
+          status: none
+          fields:
+            - usage: string
+        errors: none
+
+  - service_name: battleship_server
+    kind:
+      - Api
+    allowed_auth:
+      - none
+    middleware:
+      - static_files
+      - websockets
+      - rate_limiting
+    language: C#
+    language_version: "14"
+    framework: ASP.NET Core
+    framework_version: ".NET 10"
+    deployment_targets:
+      - Linux container
+      - Windows process
+    url: https://host/
+    exposes:
+      - category: HTTP
+        address: POST /api/rooms
+        auth: none
+        request: none
+        response:
+          status: 201
+          fields:
+            - roomCode: string
+        errors:
+          - CONFLICT
+          - INTERNAL
+
+      - category: HTTP
+        address: GET /api/rooms/{roomCode}
+        auth: none
+        request:
+          - roomCode: string
+        response:
+          status: 200
+          fields:
+            - participants: integer
+        errors:
+          - VALIDATION_FAILED
+          - NOT_FOUND
+
+      - category: STREAM
+        address: wss://host/ws/rooms/{roomCode}
+        auth: none
+        request:
+          - message: json
+        response:
+          status: none
+          fields:
+            - message: json
+        errors:
+          - VALIDATION_FAILED
+          - NOT_FOUND
+          - CONFLICT
+          - UPSTREAM_UNAVAILABLE
+          
+routing_wiring:
+  routes:
+    - category: PAGE
+      address: /
+      auth_value: none
+      screen: menu
+      guard: none
+
+    - category: PAGE
+      address: /single
+      auth_value: none
+      screen: single_player_difficulty_select
+      guard: none
+
+    - category: PAGE
+      address: /single/{difficulty}
+      auth_value: none
+      screen: single_player
+      guard: valid_difficulty
+
+    - category: PAGE
+      address: /host
+      auth_value: none
+      screen: multiplayer_host
+      guard: none
+
+    - category: PAGE
+      address: /join/{roomCode}
+      auth_value: none
+      screen: multiplayer_client
+      guard: room_exists_and_not_full
+
+    - category: PAGE
+      address: /help
+      auth_value: none
+      screen: help
+      guard: none
+
+  redirects:
+    - from: /join
+      to: /join/{roomCode}
+      when: room code entered in form
+
+    - from: /single/{difficulty}
+      to: /single/medium
+      when: difficulty is not easy, medium, or hard
+
+  unknown: /

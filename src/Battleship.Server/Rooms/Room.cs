@@ -21,6 +21,7 @@ public sealed class Room
 {
     private readonly object _sync = new();
     private DateTimeOffset _lastActivity;
+    private bool _hostAssigned;
 
     public Room(string code, DateTimeOffset createdAt)
     {
@@ -68,12 +69,13 @@ public sealed class Room
 
             if (participant.Role == RoomRole.Host)
             {
-                if (Host is not null)
+                if (Host is not null || _hostAssigned)
                 {
                     return RoleAssignResult.HostSlotTaken;
                 }
 
                 Host = participant;
+                _hostAssigned = true;
             }
             else
             {

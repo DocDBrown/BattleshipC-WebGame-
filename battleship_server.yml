@@ -1,0 +1,1052 @@
+# battleship_server.yml
+service_entry_spec:
+  service_name: battleship_server
+  language: C#
+  language_version: "14"
+  framework: ASP.NET Core
+  framework_version: ".NET 10"
+  deployment_targets:
+    - Linux container
+    - Windows process
+  ears_requirements:
+    - EARS-06 Web Battleship MUST support two-player Battleship over a WebSocket connection relayed through the game server.
+    - EARS-07 Web Battleship MUST run as a browser application written in C# using Blazor WebAssembly on .NET 10, hosted by an ASP.NET Core server.
+    - EARS-14 Web Battleship MUST keep each participant's unhit ship positions private and never send them to the server or the opponent.
+    - EARS-25 Web Battleship MUST use one host and one client joined to the same room through persistent WebSocket connections.
+    - EARS-26 Web Battleship MUST identify multiplayer rooms by a short random room code and reject a third participant joining a full room.
+    - EARS-27 Web Battleship MUST use ASP.NET Core WebSockets for real-time communication between browsers and the server.
+    - EARS-28 Web Battleship MUST use a versioned JSON message protocol, one message per WebSocket text frame, supporting HELLO, READY, SHOT, RESULT, CHAT, QUIT, and ERROR.
+    - EARS-29 Web Battleship MUST validate incoming protocol messages on both the server and the browser and associate shot results with the corresponding shot sequence.
+    - EARS-31 Web Battleship MUST maintain game state in browser memory and room state in server memory without requiring persistent storage.
+    - EARS-32 Web Battleship MUST close WebSocket connections and dispose room state when a participant quits, disconnects, or closes the page.
+    - EARS-33 Web Battleship MUST treat network messages as untrusted data, never evaluate them as code, and HTML-encode chat text before rendering.
+    - EARS-37 WHEN a room has no connected participant for Battleship__RoomIdleTimeoutSeconds or exists longer than Battleship__RoomMaxLifetimeMinutes, the server MUST close its sockets and dispose it.
+    - EARS-38 WHEN a WebSocket frame exceeds ProtocolInfo.MaxMessageBytes or is binary, the server MUST close that socket without relaying the frame.
+    - EARS-39 The server MUST rate-limit room creation and room connections per client IP and messages per participant.
+    - EARS-40 The server MUST relay each valid message only to the other participant in the same room and MUST NOT store message payloads or log chat text.
+    - EARS-41 WHEN a socket requests role host for a room whose host slot is filled, or role client for a room whose client slot is filled, the server MUST close it with 4009; WHEN role client is requested before the host has connected, the server MUST close it with 4004.
+
+ux_journeys:
+  - journey_name: room_lifecycle
+    goal: Carry one game's messages from room creation to disposal
+    persona: multiplayer_host
+    entry: create_room
+    steps:
+      - 1: host POSTs /api/rooms → room created (awaiting_host, 0 participants)
+      - 2: host opens /ws/rooms/{roomCode}?role=host → host slot filled (awaiting_client)
+      - 3: client GETs /api/rooms/{roomCode} and sees one participant → no state change
+      - 4: client opens /ws/rooms/{roomCode}?role=client → client slot filled (full)
+      - 5: each valid frame is validated and relayed to the other participant through its send queue → full
+      - 6: winner sends QUIT and closes → QUIT relayed, then peer closed with 4001 after its queue drains
+      - 7: last participant removed → room disposed
+    exit: Room removed from the registry with no sockets left open
+    invokes:
+      - create_room
+      - get_room
+      - room_connect
+      - relay_message
+      - room_disconnect
+
+  - journey_name: reject_full_room
+    goal: Keep a room limited to one host and one client
+    persona: multiplayer_client
+    entry: room_connect
+    steps:
+      - 1: a third browser opens /ws/rooms/{roomCode}?role=client on a full room → accepted then closed with 4009
+    exit: Third browser sees CONFLICT and the room is unchanged
+    invokes:
+      - get_room
+      - room_connect
+
+  - journey_name: expire_abandoned_room
+    goal: Reclaim rooms nobody is using
+    persona: room_relay
+    entry: room_reaper
+    steps:
+      - 1: reaper tick finds a room idle past its timeout or lifetime → sockets closed with 1001
+      - 2: room removed → disposed
+    exit: Registry holds only live rooms
+    invokes:
+      - room_reaper
+
+screens: []
+
+service_events:
+  - room_created
+  - room_joined
+  - room_full_rejected
+  - message_relayed
+  - message_rejected
+  - rate_limited
+  - participant_disconnected
+  - room_disposed
+  - room_expired
+
+service_components:
+  - options_loader
+  - static_file_host
+  - rate_limiter
+  - room_api
+  - room_registry
+  - room_code_generator
+  - ws_endpoint
+  - shared_protocol
+  - message_validator
+  - relay
+  - send_queue
+  - room_reaper
+  - request_logger
+
+shared_protocol:
+  assembly: Battleship.Shared
+  version: 1
+  version_source: ProtocolInfo.Version constant compiled into both battleship_web and battleship_server
+  max_message_bytes: 4096
+  max_message_bytes_source: ProtocolInfo.MaxMessageBytes constant compiled into both battleship_web and battleship_server
+  connect_url: wss://origin/ws/rooms/{roomCode}?role={host|client}
+  room_code: 6 characters matching ^[A-HJ-NP-Z2-9]{6}$
+  framing:
+    - One UTF-8 JSON object per WebSocket text frame.
+    - Frames larger than ProtocolInfo.MaxMessageBytes are rejected.
+    - Property names are camelCase and unknown properties are rejected.
+    - Every message carries v and type.
+  messages:
+    - type: HELLO
+      sender: both
+      phase: handshake; the client sends first and the host replies
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: HELLO
+    - type: READY
+      sender: both
+      phase: after HELLO exchange, once per participant
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: READY
+    - type: SHOT
+      sender: the participant whose turn it is
+      phase: combat
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: SHOT
+        - seq: integer >= 1, strictly increasing per sender
+        - coord: string matching ^[A-J](10|[1-9])$
+    - type: RESULT
+      sender: the participant who received the SHOT
+      phase: combat
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: RESULT
+        - seq: integer equal to the SHOT seq it answers
+        - outcome: enum[HIT, MISS, SUNK, GAME_OVER]
+        - ship: enum[CARRIER, BATTLESHIP, CRUISER, SUBMARINE, PATROL_BOAT] required when outcome is SUNK or GAME_OVER, omitted otherwise
+    - type: CHAT
+      sender: both
+      phase: any time after HELLO exchange
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: CHAT
+        - text: string of 1..200 UTF-16 code units with no control or bidi override characters
+    - type: QUIT
+      sender: the winner at game over, or a participant leaving early
+      phase: any time
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: QUIT
+    - type: ERROR
+      sender: either participant or the server
+      phase: any time
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: ERROR
+        - code: enum[VALIDATION, CONFLICT, VERSION_MISMATCH, RATE_LIMITED, FATAL]
+        - detail: optional string of 0..200 UTF-16 code units
+  error_codes:
+    - VALIDATION: message failed schema or game-rule checks; fatal only before the handshake completes
+    - CONFLICT: message arrived out of turn, out of sequence, or with no peer connected
+    - VERSION_MISMATCH: v differs from ProtocolInfo.Version; always fatal
+    - RATE_LIMITED: sender exceeded the server message rate; never fatal
+    - FATAL: sender is ending the session
+  close_codes:
+    - 1000: normal closure after QUIT or game over
+    - 1001: server shutdown or room expired
+    - 1002: protocol error or version mismatch
+    - 1003: binary frame received
+    - 1009: frame exceeded ProtocolInfo.MaxMessageBytes
+    - 1011: internal error
+    - 4001: peer disconnected
+    - 4004: room not found, or role client requested before the host connected
+    - 4009: room full, or requested role already taken
+    - 4029: connection rate limit exceeded
+    - 4400: invalid room code or role
+  page_error_mapping:
+    - 4004: NOT_FOUND
+    - 4009: CONFLICT
+    - 4029: RATE_LIMITED
+    - 4400: VALIDATION_FAILED
+    - 1001: UPSTREAM_UNAVAILABLE
+    - 1002: VALIDATION_FAILED
+    - 1011: UPSTREAM_UNAVAILABLE
+  game_over_rule: The participant who receives RESULT with outcome GAME_OVER sends QUIT then closes with 1000; the other participant waits up to Battleship:HandshakeTimeoutSeconds for QUIT, then closes with 1000.
+
+service_entry_graph:
+  - http: serve_app
+    auth:
+      - none
+    middleware:
+      - static_files
+    actors:
+      - player
+      - multiplayer_host
+      - multiplayer_client
+    trigger: GET any path not under /api or /ws
+    result_channel: http response
+    delivery: none
+    cancellation: cooperative
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is unbounded; each request is independent.
+      - Ordering is none.
+      - Durability is none; files are served read-only from wwwroot.
+      - Budget is the default Kestrel request timeout.
+      - Unknown paths fall back to index.html so the Blazor router handles them (EARS-34).
+      - Responses carry Content-Security-Policy with script-src 'self' 'wasm-unsafe-eval' and no inline script.
+      - index.html is served no-cache so a new deployment's ProtocolInfo.Version reaches browsers on reload.
+      - Blazor framework files are served with the application/wasm type and compressed variants enabled.
+    request_schema:
+      - path: string
+    env_vars:
+      - ASPNETCORE_URLS
+    response_schema:
+      - body: file
+    response_errors: []
+    flow:
+      - S1: resolve request.path using static_file_host from wwwroot producing ctx.file when the file exists otherwise S3
+        side_effects: [read:file]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: record ctx.file to http_response with cache and security headers
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 200 file
+      - S3: record wwwroot/index.html to http_response with no-cache and security headers
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 200 html
+    cancel_boundary: cooperative via HttpContext.RequestAborted
+    uses_components:
+      - static_file_host
+    upstream_depends_on_entries: []
+    cyclical_depends_on_entries: []
+    excludes:
+      - Server-side rendering of game pages
+      - Authentication
+
+  - http: create_room
+    auth:
+      - none
+    middleware:
+      - rate_limiting
+    actors:
+      - multiplayer_host
+    trigger: POST /api/rooms
+    result_channel: http response
+    delivery: none
+    cancellation: cooperative
+    ack_point: after step 3
+    runtime: async
+    invariants:
+      - Concurrency is unbounded per process; room_registry is a ConcurrentDictionary and TryAdd guarantees a unique code among live rooms.
+      - Ordering is none.
+      - Durability is process-memory-bound; rooms vanish on restart (EARS-31).
+      - Budget is sub-second; no I/O besides the registry.
+      - Requests beyond Battleship__CreateRoomPermitsPerMinute per client IP are rejected by rate_limiting with 429 before S1 (EARS-39).
+      - Room codes follow shared_protocol.room_code and are generated with RandomNumberGenerator (EARS-26).
+      - A new room has 0 participants until the host connects with role host; it holds no board state and no message history (EARS-14, EARS-40).
+    request_schema: []
+    env_vars:
+      - Battleship__MaxRooms
+      - Battleship__RoomCodeAttempts
+      - Battleship__CreateRoomPermitsPerMinute
+    response_schema:
+      - roomCode: string
+    response_errors:
+      - CONFLICT
+      - RATE_LIMITED
+      - INTERNAL
+    flow:
+      - S1: load options using options_loader producing ctx.options
+        side_effects: [read:config]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: validate room_registry.count requires room_registry.count < ctx.options.max_rooms on_failure CONFLICT S5
+        side_effects: [read:room_registry]
+        idempotent: yes
+        emits: []
+        failures:
+          - CONFLICT: Battleship__MaxRooms live rooms already exist
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: acquire room in room_registry using room_code_generator for_each attempt up to ctx.options.room_code_attempts sequential requires TryAdd succeeds producing ctx.room ensures ctx.room.state == awaiting_host and ctx.room.created_at == now on_failure CONFLICT S5
+        side_effects: [mutate:room_registry]
+        idempotent: no
+        emits:
+          - room_created log at-most-once
+        failures:
+          - CONFLICT: no unused code found within Battleship__RoomCodeAttempts
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.room from room_registry
+      - S4: record ctx.room.code to http_response producing response.roomCode with Location /api/rooms/{code}
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 201 json
+      - S5: record ctx.error to http_response as problem details
+        side_effects: [write:http_response, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 409 problem+json
+      - S6: record ctx.error to http_response as problem details
+        side_effects: [write:http_response, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 500 problem+json
+    cancel_boundary: cooperative via HttpContext.RequestAborted before S3; after S3 the room is left for room_reaper
+    uses_components:
+      - options_loader
+      - rate_limiter
+      - room_api
+      - room_registry
+      - room_code_generator
+      - request_logger
+    upstream_depends_on_entries: []
+    cyclical_depends_on_entries: []
+    excludes:
+      - Named or vanity room codes
+      - Room passwords
+      - Public room listing
+
+  - http: get_room
+    auth:
+      - none
+    middleware:
+      - rate_limiting
+    actors:
+      - multiplayer_client
+    trigger: GET /api/rooms/{roomCode}
+    result_channel: http response
+    delivery: none
+    cancellation: cooperative
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is unbounded; the read takes the room lock only to copy the participant count.
+      - Ordering is none.
+      - Durability is process-memory-bound.
+      - Budget is sub-second.
+      - participants is 0 while the host has not connected, 1 while waiting for a client, and 2 when full; browsers retry on 0.
+      - The response exposes only the participant count, never roles, addresses, or messages (EARS-40).
+      - Requests beyond the shared per-IP limit are rejected by rate_limiting with 429 before S1 (EARS-39).
+    request_schema:
+      - roomCode: string
+    env_vars: []
+    response_schema:
+      - participants: integer
+    response_errors:
+      - VALIDATION_FAILED
+      - NOT_FOUND
+      - RATE_LIMITED
+    flow:
+      - S1: validate request.roomCode requires uppercased roomCode matches shared_protocol.room_code producing ctx.code on_failure VALIDATION S4
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: roomCode outside the room code alphabet or wrong length
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: resolve ctx.code from room_registry producing ctx.room on_failure NOT_FOUND S5
+        side_effects: [read:room_registry]
+        idempotent: yes
+        emits: []
+        failures:
+          - NOT_FOUND: no live room with ctx.code
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: record ctx.room.participants.count to http_response producing response.participants
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 200 json
+      - S4: record ctx.error to http_response as problem details
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 400 problem+json
+      - S5: record ctx.error to http_response as problem details
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 404 problem+json
+    cancel_boundary: cooperative via HttpContext.RequestAborted
+    uses_components:
+      - room_api
+      - room_registry
+      - rate_limiter
+    upstream_depends_on_entries:
+      - create_room
+    cyclical_depends_on_entries: []
+    excludes:
+      - Room metadata beyond participant count
+
+  - ws-connect: room_connect
+    auth:
+      - none
+    middleware:
+      - websockets
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+      - room_relay
+    trigger: GET /ws/rooms/{roomCode}?role={host|client} with Upgrade websocket
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 7
+    runtime: async
+    invariants:
+      - Every rejection after S1 happens after accept with a close code from shared_protocol.close_codes, because browsers cannot read the HTTP status of a refused upgrade.
+      - Concurrency is at most one host and one client per room; role assignment runs under ctx.room.lock so two simultaneous joins cannot take the same slot (EARS-25, EARS-26, EARS-41).
+      - Role host is accepted only when the host slot is empty; role client only when the host is connected and the client slot is empty.
+      - Ordering is required per socket; frames are read sequentially and handed to relay_message one at a time.
+      - Durability is process-memory-bound; participant entries hold only the socket, role, send_queue, rate bucket, and last_activity (EARS-31, EARS-40).
+      - Budget is unbounded while open; KeepAliveInterval is Battleship__KeepAliveSeconds so dead peers are detected.
+      - Connections beyond Battleship__ConnectPermitsPerMinute per client IP are closed with 4029 (EARS-39).
+      - Each receive buffer is capped at ProtocolInfo.MaxMessageBytes (EARS-38).
+    request_schema:
+      - roomCode: string
+      - role: enum[host, client]
+    env_vars:
+      - Battleship__KeepAliveSeconds
+      - Battleship__ConnectPermitsPerMinute
+      - Battleship__SendTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+      - NOT_FOUND
+      - CONFLICT
+      - RATE_LIMITED
+      - UPSTREAM_UNAVAILABLE
+    flow:
+      - S1: validate request requires HttpContext.WebSockets.IsWebSocketRequest on_failure VALIDATION S9
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: request is not a WebSocket upgrade
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: acquire socket using ws_endpoint with KeepAliveInterval Battleship__KeepAliveSeconds producing ctx.socket on_failure UNAVAILABLE S13
+        side_effects: [external:ws]
+        idempotent: no
+        emits: []
+        failures:
+          - UPSTREAM_UNAVAILABLE: AcceptWebSocketAsync fails or the client aborts during upgrade
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.socket using ws_endpoint
+      - S3: validate client IP using rate_limiter requires a connection permit is available within Battleship__ConnectPermitsPerMinute on_failure RATE_LIMITED S10
+        side_effects: [mutate:rate_limiter]
+        idempotent: no
+        emits: []
+        failures:
+          - RATE_LIMITED: EARS-39
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: validate request.roomCode and request.role requires uppercased roomCode matches shared_protocol.room_code and role in {host, client} producing ctx.code on_failure VALIDATION S10
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: roomCode or role invalid
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S5: resolve ctx.code from room_registry producing ctx.room on_failure NOT_FOUND S11
+        side_effects: [read:room_registry]
+        idempotent: yes
+        emits: []
+        failures:
+          - NOT_FOUND: no live room with ctx.code
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S6: decide ctx.role using room_registry under ctx.room.lock requires request.role slot is empty and, for role client, the host is connected producing ctx.role ensures the slot is reserved on_failure NOT_FOUND S11 on_failure CONFLICT S12
+        side_effects: [mutate:ctx.room]
+        idempotent: no
+        emits: []
+        failures:
+          - NOT_FOUND: role client requested before the host connected (EARS-41)
+          - CONFLICT: requested role slot already filled (EARS-26, EARS-41)
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.role slot in ctx.room
+      - S7: update ctx.room.participants under ctx.room.lock adding ctx.participant with ctx.socket and a new send_queue ensures ctx.room.state moves awaiting_host to awaiting_client to full and ctx.room.last_activity == now
+        side_effects: [mutate:ctx.room]
+        idempotent: keyed:ctx.participant.id
+        emits:
+          - room_joined log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.participant.id
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.participant using room_disconnect
+      - S8: iterate frames from ctx.participant.socket sequential using relay_message until a close frame, abort, or receive exception finally S14
+        side_effects: [external:ws, mutate:ctx.room]
+        idempotent: no
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S9: record ctx.error to http_response as problem details
+        side_effects: [write:http_response]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: respond 400 problem+json
+      - S10: release ctx.socket using ws_endpoint with close 4029 when rate limited otherwise 4400
+        side_effects: [external:ws, write:log]
+        idempotent: yes
+        emits:
+          - rate_limited log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close ctx.close_code
+      - S11: release ctx.socket using ws_endpoint with close 4004
+        side_effects: [external:ws]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close 4004
+      - S12: release ctx.socket using ws_endpoint with close 4009
+        side_effects: [external:ws, write:log]
+        idempotent: yes
+        emits:
+          - room_full_rejected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close 4009
+      - S13: record ctx.error to log
+        side_effects: [write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: none
+      - S14: release ctx.participant using room_disconnect
+        side_effects: [external:ws, mutate:ctx.room]
+        idempotent: keyed:ctx.participant.id
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.participant.id
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close 1000
+    cancel_boundary: forced on client abort or host shutdown at any step; S14 always runs via finally once S7 has completed
+    uses_components:
+      - ws_endpoint
+      - room_registry
+      - rate_limiter
+      - send_queue
+      - shared_protocol
+      - request_logger
+    upstream_depends_on_entries:
+      - create_room
+    cyclical_depends_on_entries:
+      - relay_message
+      - room_disconnect
+    excludes:
+      - More than one host and one client per room
+      - Spectator sockets
+      - Reconnection to a previous slot
+      - Sticky sessions or cross-instance rooms
+
+  - ws-message: relay_message
+    auth:
+      - none
+    middleware: []
+    actors:
+      - room_relay
+    trigger: text frame received on a room socket
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 6
+    runtime: serial
+    invariants:
+      - Concurrency is serial per sender socket; all sends to a socket, including server ERROR frames and close frames, go through that socket's send_queue so two writers never call SendAsync at once.
+      - Ordering is preserved per sender; frames are relayed in the order received.
+      - Durability is none; the payload is dropped after S6 and never stored (EARS-31, EARS-40).
+      - Budget is Battleship__SendTimeoutSeconds per relay send.
+      - Each frame is checked for size and type, rate, schema, and version before relay; only the re-serialised validated shared_protocol record is forwarded, so unknown fields never reach the peer (EARS-29, EARS-38).
+      - The server checks schema and version only; turn order, seq matching, and board rules are enforced in the browsers.
+      - Payloads are parsed with System.Text.Json into shared_protocol records and never evaluated (EARS-33).
+      - Logs record message type and seq only, never chat text (EARS-40).
+    request_schema:
+      - message: json
+    env_vars:
+      - Battleship__MessagesPerSecond
+      - Battleship__MessageBurst
+      - Battleship__SendTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+      - CONFLICT
+      - RATE_LIMITED
+      - UPSTREAM_UNAVAILABLE
+    flow:
+      - S1: validate request.frame requires frame.type == Text and accumulated size <= ProtocolInfo.MaxMessageBytes on_failure VALIDATION S9
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: EARS-38
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: validate ctx.participant.rate_bucket using rate_limiter requires a token is available at Battleship__MessagesPerSecond with burst Battleship__MessageBurst on_failure RATE_LIMITED S8
+        side_effects: [mutate:ctx.participant.rate_bucket]
+        idempotent: no
+        emits: []
+        failures:
+          - RATE_LIMITED: EARS-39
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: validate request.message using message_validator requires the frame decodes as a shared_protocol record for its type with no unknown properties producing ctx.message on_failure VALIDATION S7
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: malformed JSON, unknown type, wrong field types, unknown properties, or field values outside shared_protocol rules
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: validate ctx.message.v requires ctx.message.v == ProtocolInfo.Version on_failure VALIDATION S10
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: version mismatch, usually a stale cached app bundle
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S5: resolve ctx.peer from ctx.room under ctx.room.lock requires the other participant is connected producing ctx.peer on_failure CONFLICT S7
+        side_effects: [read:room_registry, mutate:ctx.room.last_activity]
+        idempotent: yes
+        emits: []
+        failures:
+          - CONFLICT: no peer connected in ctx.room
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S6: publish ctx.message using relay to ctx.peer.send_queue re-serialised from the validated record on_failure UNAVAILABLE S11
+        side_effects: [external:ws]
+        idempotent: no
+        emits:
+          - message_relayed log at-most-once
+        failures:
+          - UPSTREAM_UNAVAILABLE: peer send fails or exceeds Battleship__SendTimeoutSeconds
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: send message one
+      - S7: publish ERROR using relay to ctx.participant.send_queue with code VALIDATION or CONFLICT producing response.message
+        side_effects: [external:ws]
+        idempotent: no
+        emits:
+          - message_rejected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: send message one
+      - S8: publish ERROR using relay to ctx.participant.send_queue with code RATE_LIMITED producing response.message
+        side_effects: [external:ws]
+        idempotent: no
+        emits:
+          - rate_limited log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: send message one
+      - S9: release ctx.participant.socket through ctx.participant.send_queue with close 1009 when oversized otherwise 1003
+        side_effects: [external:ws]
+        idempotent: keyed:ctx.participant.id
+        emits:
+          - message_rejected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.participant.id
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close ctx.close_code
+      - S10: publish ERROR using relay to ctx.participant.send_queue with code VERSION_MISMATCH then close 1002 through the same send_queue
+        side_effects: [external:ws]
+        idempotent: no
+        emits:
+          - message_rejected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close 1002
+      - S11: release ctx.peer using room_disconnect
+        side_effects: [external:ws, mutate:ctx.room]
+        idempotent: keyed:ctx.peer.id
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.peer.id
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: send message none
+    cancel_boundary: forced on sender or peer socket close at any step; room_disconnect cleans up
+    uses_components:
+      - shared_protocol
+      - message_validator
+      - rate_limiter
+      - room_registry
+      - relay
+      - send_queue
+      - request_logger
+    upstream_depends_on_entries:
+      - room_connect
+    cyclical_depends_on_entries:
+      - room_disconnect
+    excludes:
+      - Turn, seq, or board-rule enforcement on the server
+      - Message persistence, history, or replay
+      - Broadcast to more than one peer
+
+  - ws-close: room_disconnect
+    auth:
+      - none
+    middleware: []
+    actors:
+      - room_relay
+    trigger: close frame, socket abort, receive exception, or server-initiated close on a room socket
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: none
+    ack_point: after step 1
+    runtime: serial
+    invariants:
+      - Concurrency is serial per room; all participant changes run under ctx.room.lock.
+      - Idempotent per participant; a participant is removed at most once even if several paths call this entry.
+      - Ordering is preserved for the peer; the 4001 close is queued on the peer's send_queue behind any frames already queued, so a final QUIT is always delivered first.
+      - Durability is process-memory-bound; the room is removed from room_registry as soon as it is empty (EARS-32).
+      - Budget is Battleship__SendTimeoutSeconds for draining and each close handshake.
+      - The remaining peer is closed with 4001 so its browser ends the game (EARS-36).
+    request_schema:
+      - participant_id: string
+      - close_code: integer
+    env_vars:
+      - Battleship__SendTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors: []
+    flow:
+      - S1: update ctx.room.participants under ctx.room.lock removing ctx.participant ensures ctx.participant.send_queue completed and socket disposed
+        side_effects: [mutate:ctx.room, external:ws]
+        idempotent: keyed:ctx.participant.id
+        emits:
+          - participant_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.participant.id
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+      - S2: decide ctx.peer when ctx.room.participants.count == 1 producing ctx.peer otherwise S4
+        side_effects: [read:room_registry]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: publish close 4001 peer_disconnected to ctx.peer.send_queue after its pending frames drain ensures the peer's receive loop ends and runs this entry for the peer
+        side_effects: [external:ws]
+        idempotent: keyed:ctx.peer.id
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.peer.id
+        retry: none
+        timeout: Battleship__SendTimeoutSeconds
+        compensation: none
+        terminal: close 1000
+      - S4: release ctx.room from room_registry when ctx.room.participants.count == 0 ensures TryRemove succeeded
+        side_effects: [mutate:room_registry]
+        idempotent: keyed:ctx.room.code
+        emits:
+          - room_disposed log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.room.code
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: close 1000
+    cancel_boundary: none; runs to completion once started
+    uses_components:
+      - room_registry
+      - ws_endpoint
+      - send_queue
+      - request_logger
+    upstream_depends_on_entries:
+      - room_connect
+    cyclical_depends_on_entries:
+      - relay_message
+    excludes:
+      - Holding a slot open for reconnection
+      - Notifying anyone outside the room
+
+  - job: room_reaper
+    auth:
+      - none
+    middleware: []
+    actors:
+      - room_relay
+    trigger: PeriodicTimer every Battleship__ReaperIntervalSeconds in a BackgroundService
+    result_channel: none
+    delivery: none
+    cancellation: cooperative
+    ack_point: n/a
+    runtime: background
+    invariants:
+      - Concurrency is single-instance per process; ticks never overlap.
+      - Ordering is none across rooms.
+      - Durability is process-memory-bound.
+      - Budget is one pass over room_registry per tick.
+      - A room is expired when it has had no participant for Battleship__RoomIdleTimeoutSeconds or is older than Battleship__RoomMaxLifetimeMinutes (EARS-37).
+      - Expiry queues a 1001 close on each participant's send_queue before removal.
+    request_schema: []
+    env_vars:
+      - Battleship__ReaperIntervalSeconds
+      - Battleship__RoomIdleTimeoutSeconds
+      - Battleship__RoomMaxLifetimeMinutes
+      - Battleship__SendTimeoutSeconds
+    response_schema: []
+    response_errors: []
+    flow:
+      - S1: iterate room_registry snapshot sequential producing ctx.room
+        side_effects: [read:room_registry]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        substeps:
+          - S2: decide ctx.expired when ctx.room is empty past Battleship__RoomIdleTimeoutSeconds or older than Battleship__RoomMaxLifetimeMinutes producing ctx.expired otherwise S1
+            side_effects: [none]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S3: publish close 1001 going away to each ctx.room.participants send_queue
+            side_effects: [external:ws]
+            idempotent: keyed:ctx.room.code
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: idempotent_by ctx.room.code
+            retry: none
+            timeout: Battleship__SendTimeoutSeconds
+            compensation: none
+          - S4: release ctx.room from room_registry ensures TryRemove succeeded
+            side_effects: [mutate:room_registry]
+            idempotent: keyed:ctx.room.code
+            emits:
+              - room_expired log at-most-once
+              - room_disposed log at-most-once
+            failures: []
+            transaction: none
+            idempotency: idempotent_by ctx.room.code
+            retry: none
+            timeout: none
+            compensation: none
+      - S5: terminate tick
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: none
+    cancel_boundary: cooperative via the host's stopping token between rooms
+    uses_components:
+      - room_reaper
+      - room_registry
+      - send_queue
+      - request_logger
+    upstream_depends_on_entries:
+      - create_room
+    cyclical_depends_on_entries:
+      - room_disconnect
+    excludes:
+      - Persisting expired room statistics
+      - Notifying players by any channel other than socket close

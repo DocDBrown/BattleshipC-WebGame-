@@ -38,9 +38,22 @@ public sealed class ProtocolCodec
 
         try
         {
+            using var document = JsonDocument.Parse(text);
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !HasCanonicalEnums(document.RootElement))
+            {
+                error = "Message is not valid protocol JSON.";
+                return false;
+            }
+
             message = JsonSerializer.Deserialize<ProtocolMessage>(text, Options);
         }
         catch (JsonException)
+        {
+            error = "Message is not valid protocol JSON.";
+            return false;
+        }
+        catch (ArgumentException)
         {
             error = "Message is not valid protocol JSON.";
             return false;
@@ -213,6 +226,29 @@ public sealed class ProtocolCodec
 
         error = string.Empty;
         return true;
+    }
+
+    private static bool HasCanonicalEnums(JsonElement root) =>
+        IsCanonicalEnum<MessageType>(root, "type")
+        && IsCanonicalEnum<ShotOutcome>(root, "outcome")
+        && IsCanonicalEnum<ShipKind>(root, "ship")
+        && IsCanonicalEnum<ProtocolErrorCode>(root, "code");
+
+    private static bool IsCanonicalEnum<T>(JsonElement root, string propertyName)
+        where T : struct, Enum
+    {
+        if (!root.TryGetProperty(propertyName, out var value))
+        {
+            return true;
+        }
+
+        if (value.ValueKind != JsonValueKind.String)
+        {
+            return true;
+        }
+
+        var text = value.GetString();
+        return text is not null && Enum.GetNames<T>().Contains(text, StringComparer.Ordinal);
     }
 
     private static bool HasAnyPayload(ProtocolMessage message) =>

@@ -19,5 +19,5 @@ public sealed class Ship
     public ShipKind Kind => Definition.Kind;
     public string Name => Definition.Name;
     public int Size => Definition.Size;
-    public bool IsSunk => Hits.Count >= Cells.Count;
+    public bool IsSunk => Cells.All(Hits.Contains);
 }

@@ -92,6 +92,33 @@ app.MapGet("/ws/rooms/{roomCode}", (HttpContext context) =>
     return app.Services.GetRequiredService<RoomSocketHandler>().HandleAsync(context, roomCode);
 });
 
+app.MapMethods("/api/rooms", new[] { "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" }, (HttpContext context) =>
+{
+    context.Response.StatusCode = StatusCodes.Status405MethodNotAllowed;
+    return Task.CompletedTask;
+});
+
+app.Lifetime.ApplicationStopping.Register(() =>
+{
+    var registry = app.Services.GetRequiredService<RoomRegistry>();
+    foreach (var room in registry.Snapshot())
+    {
+        if (!room.TryMarkClosed())
+        {
+            continue;
+        }
+
+        var participants = room.SnapshotParticipants();
+        foreach (var participant in participants)
+        {
+            participant.EnqueueClose(1001, "server shutting down");
+        }
+
+        registry.TryRemove(room);
+        Task.WhenAll(participants.Select(participant => participant.CompleteAsync(TimeSpan.FromSeconds(1)))).Wait(TimeSpan.FromSeconds(2));
+    }
+});
+
 app.MapFallback(async (HttpContext context) =>
 {
     if (context.Request.Path.StartsWithSegments("/api")

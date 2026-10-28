@@ -1,0 +1,2653 @@
+# battleship_web.yml
+service_entry_spec:
+  service_name: battleship_web
+  language: C#
+  language_version: "14"
+  framework: Blazor WebAssembly
+  framework_version: ".NET 10"
+  deployment_targets:
+    - Static files served by battleship_server
+  ears_requirements:
+    - EARS-01 Web Battleship MUST support single-player Battleship against a local AI.
+    - EARS-02 Web Battleship MUST offer three single-player difficulty levels, easy, medium, and hard, selected before ship placement.
+    - EARS-03 Web Battleship MUST default single-player difficulty to medium when no valid difficulty is selected.
+    - EARS-04 Web Battleship MUST keep the selected difficulty fixed for the duration of a single-player game.
+    - EARS-05 Web Battleship MUST display the selected difficulty during a single-player game and on the game-over screen.
+    - EARS-06 Web Battleship MUST support two-player Battleship over a WebSocket connection relayed through the game server.
+    - EARS-07 Web Battleship MUST run as a browser application written in C# using Blazor WebAssembly on .NET 10, hosted by an ASP.NET Core server.
+    - EARS-08 Web Battleship MUST run in current versions of Chrome, Edge, Firefox, and Safari without plugins.
+    - EARS-09 Web Battleship MUST use a 10x10 board for each participant.
+    - EARS-10 Web Battleship MUST use the fleet Carrier(5), Battleship(4), Cruiser(3), Submarine(3), and Patrol Boat(2).
+    - EARS-11 Web Battleship MUST support manual and automatic ship placement.
+    - EARS-12 Web Battleship MUST support ship placement and targeting by mouse, touch, and keyboard input.
+    - EARS-13 Web Battleship MUST reject overlapping ships and placements outside board boundaries.
+    - EARS-14 Web Battleship MUST keep each participant's unhit ship positions private and never send them to the server or the opponent.
+    - EARS-15 Web Battleship MUST alternate turns after each valid shot.
+    - EARS-16 Web Battleship MUST reject invalid coordinates and repeated shots without consuming a turn.
+    - EARS-17 Web Battleship MUST report hit, miss, sunk ship, and game-over outcomes.
+    - EARS-18 Web Battleship MUST end combat when all five ships belonging to one participant are sunk.
+    - EARS-19 Web Battleship MUST provide a local AI that runs in the browser and chooses legal untried shots without inspecting hidden ship coordinates.
+    - EARS-20 Web Battleship MUST base every local AI decision only on its own shot history, the reported hit, miss, and sunk outcomes, and the sizes of ships not yet sunk.
+    - EARS-21 Web Battleship MUST make the easy local AI choose uniformly at random among untried cells.
+    - EARS-22 Web Battleship MUST make the medium local AI choose random untried cells until it scores a hit, then target untried cells orthogonally adjacent to unresolved hits until the hit ship is reported sunk.
+    - EARS-23 Web Battleship MUST make the hard local AI choose the untried cell with the highest count of legal placements of remaining ships consistent with known hits and misses, prioritising cells adjacent to unresolved hits and breaking ties randomly.
+    - EARS-24 Web Battleship MUST place AI ships randomly using automatic placement at every difficulty level.
+    - EARS-25 Web Battleship MUST use one host and one client joined to the same room through persistent WebSocket connections.
+    - EARS-26 Web Battleship MUST identify multiplayer rooms by a short random room code and reject a third participant joining a full room.
+    - EARS-27 Web Battleship MUST use ASP.NET Core WebSockets for real-time communication between browsers and the server.
+    - EARS-28 Web Battleship MUST use a versioned JSON message protocol, one message per WebSocket text frame, supporting HELLO, READY, SHOT, RESULT, CHAT, QUIT, and ERROR.
+    - EARS-29 Web Battleship MUST validate incoming protocol messages on both the server and the browser and associate shot results with the corresponding shot sequence.
+    - EARS-30 Web Battleship MUST allow multiplayer chat without changing the active turn.
+    - EARS-31 Web Battleship MUST maintain game state in browser memory and room state in server memory without requiring persistent storage.
+    - EARS-32 Web Battleship MUST close WebSocket connections and dispose room state when a participant quits, disconnects, or closes the page.
+    - EARS-33 Web Battleship MUST treat network messages as untrusted data, never evaluate them as code, and HTML-encode chat text before rendering.
+    - EARS-34 WHEN an unknown route is requested, Web Battleship MUST navigate to the menu at / without adding a history entry.
+    - EARS-35 WHEN a single-player route names a difficulty other than easy, medium, or hard, Web Battleship MUST navigate to /single/medium.
+    - EARS-36 WHEN the WebSocket closes during a multiplayer game without a QUIT, Web Battleship MUST end the game, show why it ended, and offer a return to the menu.
+    - EARS-42 WHEN the server closes the socket with 4004, 4009, 4029, or 4400 before the handshake completes, Web Battleship MUST show NOT_FOUND, CONFLICT, RATE_LIMITED, or VALIDATION_FAILED respectively.
+
+ux_journeys:
+  - journey_name: play_single_player
+    goal: Play a full Battleship game against the local AI at a chosen difficulty with no network after load
+    persona: player
+    entry: single_player_difficulty_select
+    steps:
+      - 1: open /single → single_player_difficulty_select (medium preselected)
+      - 2: choose easy, medium, or hard → single_player (setup phase, difficulty badge shown)
+      - 3: choose manual or automatic placement → single_player (placement)
+      - 4: place five ships by click, tap, drag, or keyboard without overlap or out-of-bounds → single_player (combat, both boards shown)
+      - 5: select a target cell → single_player (hit/miss/sunk announced, targeting board updated)
+      - 6: AI fires a legal untried shot chosen by the selected difficulty → single_player (own board updated)
+      - 7: repeat 5–6 until one fleet is destroyed → single_player (game over with winner and difficulty)
+      - 8: choose rematch or change difficulty → single_player or single_player_difficulty_select
+    exit: Winner and difficulty displayed with rematch and change-difficulty actions
+    invokes:
+      - single_player_difficulty_select
+      - single_player
+
+  - journey_name: host_multiplayer
+    goal: Host a game that one remote player joins by room code
+    persona: multiplayer_host
+    entry: multiplayer_host
+    steps:
+      - 1: open /host → multiplayer_host (creating room)
+      - 2: room created and WebSocket open with role host → multiplayer_host (room code and join link shown, waiting)
+      - 3: client HELLO received, HELLO returned → multiplayer_host (setup phase)
+      - 4: place fleet → multiplayer_host (waiting for READY)
+      - 5: both READY → multiplayer_host (combat, host fires first)
+      - 6: send SHOT, receive RESULT, receive SHOT, send RESULT, optionally exchange CHAT → multiplayer_host (combat)
+      - 7: one fleet sunk → multiplayer_host (game over; winner sends QUIT, loser waits for it)
+    exit: Winner displayed, WebSocket closed, return-to-menu offered
+    invokes:
+      - multiplayer_host
+      - recv_hello
+      - recv_ready
+      - recv_shot
+      - recv_result
+      - recv_chat
+      - recv_quit
+      - recv_error
+      - connection_lost
+
+  - journey_name: join_multiplayer
+    goal: Join a hosted game by room code and play to completion
+    persona: multiplayer_client
+    entry: multiplayer_client
+    steps:
+      - 1: enter the room code on the menu or open the shared link → multiplayer_client (checking room, retrying briefly while the host connects)
+      - 2: room has its host, WebSocket open with role client, HELLO sent and returned → multiplayer_client (setup phase)
+      - 3: place fleet → multiplayer_client (waiting for READY)
+      - 4: both READY → multiplayer_client (combat, waiting for host SHOT)
+      - 5: receive SHOT, send RESULT, send SHOT, receive RESULT, optionally exchange CHAT → multiplayer_client (combat)
+      - 6: one fleet sunk → multiplayer_client (game over; winner sends QUIT, loser waits for it)
+    exit: Winner displayed, WebSocket closed, return-to-menu offered
+    invokes:
+      - multiplayer_client
+      - recv_hello
+      - recv_ready
+      - recv_shot
+      - recv_result
+      - recv_chat
+      - recv_quit
+      - recv_error
+      - connection_lost
+
+  - journey_name: multiplayer_chat
+    goal: Exchange text with the opponent during a game
+    persona: multiplayer_client
+    entry: multiplayer_client
+    steps:
+      - 1: type in the chat box and press Enter or Send → multiplayer_client (CHAT sent, turn unchanged)
+      - 2: peer CHAT arrives → multiplayer_client (message appended to chat log as encoded text, turn unchanged)
+    exit: Message displayed on both sides with the active turn preserved
+    invokes:
+      - recv_chat
+
+  - journey_name: get_help
+    goal: Learn how to play and how to host or join
+    persona: player
+    entry: help
+    steps:
+      - 1: open /help from the menu → help
+    exit: Rules, controls, and multiplayer instructions displayed
+    invokes:
+      - help
+
+screens:
+  - screen: menu
+    purpose: Entry point for all modes
+    shows:
+      - title
+      - mode_buttons (single player, host game, join game, help)
+      - room_code_input (6 characters, uppercase)
+    actions:
+      - single player -> single_player_difficulty_select
+      - host game -> multiplayer_host
+      - enter room code and join -> multiplayer_client
+      - help -> help
+
+  - screen: single_player_difficulty_select
+    purpose: Choose the AI difficulty before a single-player game
+    shows:
+      - difficulty_options (easy, medium, hard with one-line descriptions)
+      - default_selection (medium)
+    actions:
+      - choose easy -> single_player
+      - choose medium -> single_player
+      - choose hard -> single_player
+      - back -> menu
+
+  - screen: single_player
+    purpose: Local game against the AI
+    shows:
+      - difficulty_badge (easy, medium, or hard)
+      - own_board (10x10, ships and incoming hits and misses)
+      - targeting_board (10x10, shot history only)
+      - fleet_status (per ship afloat or sunk) for both sides
+      - turn_indicator (yours or AI)
+      - last_outcome (HIT, MISS, SUNK with ship, GAME OVER)
+      - game_over_panel (winner, difficulty, rematch, change difficulty)
+    actions:
+      - choose placement mode (manual or auto) -> single_player.placement
+      - place or rotate a ship by click, tap, drag, or arrow keys and R -> single_player.placement
+      - select target cell by click, tap, or arrow keys and Enter -> single_player.combat
+      - rematch -> single_player (new session, same difficulty)
+      - change difficulty -> single_player_difficulty_select
+      - quit -> menu
+
+  - screen: multiplayer_host
+    purpose: Host-side networked game
+    shows:
+      - room_status (creating, waiting for opponent, connected)
+      - room_code
+      - join_link with copy button
+      - protocol_version
+      - own_board
+      - targeting_board
+      - fleet_status
+      - chat_log
+      - chat_input
+      - turn_indicator (yours or opponent)
+      - last_outcome
+      - error_panel
+    actions:
+      - copy join link -> multiplayer_host (unchanged)
+      - choose placement mode and place ships -> multiplayer_host.placement
+      - select target cell -> multiplayer_host.combat
+      - send chat -> multiplayer_host (turn unchanged)
+      - quit -> menu (QUIT sent)
+
+  - screen: multiplayer_client
+    purpose: Client-side networked game
+    shows:
+      - room_status (checking, waiting for host, connecting, connected)
+      - room_code
+      - protocol_version
+      - own_board
+      - targeting_board
+      - fleet_status
+      - chat_log
+      - chat_input
+      - turn_indicator
+      - last_outcome
+      - error_panel
+    actions:
+      - choose placement mode and place ships -> multiplayer_client.placement
+      - select target cell -> multiplayer_client.combat
+      - send chat -> multiplayer_client (turn unchanged)
+      - quit -> menu (QUIT sent)
+
+  - screen: help
+    purpose: Rules and instructions
+    shows:
+      - rules (board, fleet, turns, outcomes)
+      - controls (mouse, touch, keyboard)
+      - difficulty_descriptions
+      - multiplayer_instructions (host, share code, join)
+    actions:
+      - back -> menu
+
+service_events:
+  - game_started
+  - difficulty_selected
+  - fleet_placed
+  - shot_fired
+  - shot_resolved
+  - ship_sunk
+  - game_over
+  - room_created
+  - peer_connected
+  - peer_disconnected
+  - chat_received
+  - protocol_error
+  - connection_lost
+
+service_components:
+  - page_router
+  - input_handler
+  - board_renderer
+  - board_engine
+  - fleet_placement
+  - shot_resolver
+  - ai_strategy_easy
+  - ai_strategy_medium
+  - ai_strategy_hard
+  - session_state
+  - shared_protocol
+  - protocol_codec
+  - chat_sanitizer
+  - ws_transport
+  - room_api_client
+  - cleanup_handler
+  - app_logger
+
+shared_protocol:
+  assembly: Battleship.Shared
+  version: 1
+  version_source: ProtocolInfo.Version constant compiled into both battleship_web and battleship_server
+  max_message_bytes: 4096
+  max_message_bytes_source: ProtocolInfo.MaxMessageBytes constant compiled into both battleship_web and battleship_server
+  connect_url: wss://origin/ws/rooms/{roomCode}?role={host|client}
+  room_code: 6 characters matching ^[A-HJ-NP-Z2-9]{6}$
+  framing:
+    - One UTF-8 JSON object per WebSocket text frame.
+    - Frames larger than ProtocolInfo.MaxMessageBytes are rejected.
+    - Property names are camelCase and unknown properties are rejected.
+    - Every message carries v and type.
+  messages:
+    - type: HELLO
+      sender: both
+      phase: handshake; the client sends first and the host replies
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: HELLO
+    - type: READY
+      sender: both
+      phase: after HELLO exchange, once per participant
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: READY
+    - type: SHOT
+      sender: the participant whose turn it is
+      phase: combat
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: SHOT
+        - seq: integer >= 1, strictly increasing per sender
+        - coord: string matching ^[A-J](10|[1-9])$
+    - type: RESULT
+      sender: the participant who received the SHOT
+      phase: combat
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: RESULT
+        - seq: integer equal to the SHOT seq it answers
+        - outcome: enum[HIT, MISS, SUNK, GAME_OVER]
+        - ship: enum[CARRIER, BATTLESHIP, CRUISER, SUBMARINE, PATROL_BOAT] required when outcome is SUNK or GAME_OVER, omitted otherwise
+    - type: CHAT
+      sender: both
+      phase: any time after HELLO exchange
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: CHAT
+        - text: string of 1..200 UTF-16 code units with no control or bidi override characters
+    - type: QUIT
+      sender: the winner at game over, or a participant leaving early
+      phase: any time
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: QUIT
+    - type: ERROR
+      sender: either participant or the server
+      phase: any time
+      fields:
+        - v: integer equal to ProtocolInfo.Version
+        - type: ERROR
+        - code: enum[VALIDATION, CONFLICT, VERSION_MISMATCH, RATE_LIMITED, FATAL]
+        - detail: optional string of 0..200 UTF-16 code units
+  error_codes:
+    - VALIDATION: message failed schema or game-rule checks; fatal only before the handshake completes
+    - CONFLICT: message arrived out of turn, out of sequence, or with no peer connected
+    - VERSION_MISMATCH: v differs from ProtocolInfo.Version; always fatal
+    - RATE_LIMITED: sender exceeded the server message rate; never fatal
+    - FATAL: sender is ending the session
+  close_codes:
+    - 1000: normal closure after QUIT or game over
+    - 1001: server shutdown or room expired
+    - 1002: protocol error or version mismatch
+    - 1003: binary frame received
+    - 1009: frame exceeded ProtocolInfo.MaxMessageBytes
+    - 1011: internal error
+    - 4001: peer disconnected
+    - 4004: room not found, or role client requested before the host connected
+    - 4009: room full, or requested role already taken
+    - 4029: connection rate limit exceeded
+    - 4400: invalid room code or role
+  page_error_mapping:
+    - 4004: NOT_FOUND
+    - 4009: CONFLICT
+    - 4029: RATE_LIMITED
+    - 4400: VALIDATION_FAILED
+    - 1001: UPSTREAM_UNAVAILABLE
+    - 1002: VALIDATION_FAILED
+    - 1011: UPSTREAM_UNAVAILABLE
+  game_over_rule: The participant who receives RESULT with outcome GAME_OVER sends QUIT then closes with 1000; the other participant waits up to Battleship:HandshakeTimeoutSeconds for QUIT, then closes with 1000.
+
+service_entry_graph:
+  - page: menu
+    auth:
+      - none
+    middleware: []
+    actors:
+      - player
+      - multiplayer_host
+      - multiplayer_client
+    trigger: navigate / or any unknown route
+    result_channel: rendered page
+    delivery: none
+    cancellation: none
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is single-instance per browser tab.
+      - Ordering is none.
+      - Durability is browser-memory-bound; nothing is stored (EARS-31).
+      - Budget is one render; the entry performs no network I/O.
+      - Unknown routes are replaced with / without a new history entry (EARS-34).
+      - The room code input is uppercased and limited to 6 characters before navigation to /join/{roomCode}.
+    request_schema:
+      - path: string
+    env_vars: []
+    response_schema:
+      - menu: html
+    response_errors: []
+    flow:
+      - S1: decide ctx.known_route using page_router when request.path is a known route producing ctx.known_route on_success S3 otherwise S2
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: invoke page_router to / replacing history entry
+        side_effects: [navigate]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: invoke board_renderer to dom producing response.menu
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render menu
+    cancel_boundary: none
+    uses_components:
+      - page_router
+      - board_renderer
+    upstream_depends_on_entries: []
+    cyclical_depends_on_entries: []
+    excludes:
+      - Accounts or player profiles
+      - Lobby browsing or public room lists
+
+  - page: single_player_difficulty_select
+    auth:
+      - none
+    middleware: []
+    actors:
+      - player
+    trigger: navigate /single
+    result_channel: rendered page
+    delivery: none
+    cancellation: none
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is single-instance per browser tab.
+      - Ordering is none.
+      - Durability is browser-memory-bound (EARS-31).
+      - Budget is one render; the entry performs no network I/O.
+      - Medium is preselected so pressing Enter without a choice starts a medium game (EARS-03).
+      - Each option is reachable by keyboard and has a visible focus state (EARS-12).
+    request_schema: []
+    env_vars: []
+    response_schema:
+      - difficultyOptions: string[]
+    response_errors: []
+    flow:
+      - S1: compose ctx.options producing response.difficultyOptions ensures options == [easy, medium, hard] and selected == medium
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: invoke board_renderer to dom producing ctx.display
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: decide ctx.difficulty as player from input_handler requires ctx.difficulty in {easy, medium, hard} producing ctx.difficulty
+        side_effects: [read:input_handler, navigate]
+        idempotent: yes
+        emits:
+          - difficulty_selected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: navigate /single/{ctx.difficulty}
+    cancel_boundary: none
+    uses_components:
+      - input_handler
+      - board_renderer
+      - page_router
+    upstream_depends_on_entries:
+      - menu
+    cyclical_depends_on_entries: []
+    excludes:
+      - Custom difficulty tuning
+      - Remembering the last difficulty between visits
+
+  - page: single_player
+    auth:
+      - none
+    middleware: []
+    actors:
+      - player
+      - local_ai_easy
+      - local_ai_medium
+      - local_ai_hard
+    trigger: navigate /single/{difficulty}
+    result_channel: rendered page
+    delivery: none
+    cancellation: forced
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is single-instance per page component; one SinglePlayer component owns ctx.session (EARS-31).
+      - Ordering is required per ctx.session.turn; the human and AI strictly alternate after each valid shot (EARS-15).
+      - Durability is browser-memory-bound; nothing is written to localStorage, IndexedDB, cookies, or the server (EARS-31).
+      - Budget is unbounded for human input; each AI decision must complete within Battleship:AiDecisionBudgetMs and is shown after Battleship:AiMoveDelayMs.
+      - ctx.ai_strategy is chosen once at S4 from ctx.difficulty and never replaced during the session (EARS-04).
+      - AI strategies receive only ctx.session.ai_view (own shot history, reported outcomes, remaining ship sizes) and never a reference to ctx.session.own_board (EARS-19, EARS-20).
+      - Easy chooses uniformly among untried cells (EARS-21); medium hunts randomly then targets adjacent cells until sunk (EARS-22); hard counts legal placements per untried cell and picks the maximum (EARS-23).
+      - The AI fleet is always placed automatically and randomly (EARS-24).
+      - Invalid or repeated coordinates are rejected and do not advance ctx.session.turn (EARS-16).
+      - Each board is exactly 10x10 and each fleet is exactly Carrier(5), Battleship(4), Cruiser(3), Submarine(3), Patrol Boat(2) (EARS-09, EARS-10).
+      - The difficulty badge is visible from S8 until the page is left (EARS-05).
+      - No network I/O occurs after the app has loaded.
+    request_schema:
+      - difficulty: enum[easy, medium, hard]
+    env_vars:
+      - Battleship:AiSeed
+      - Battleship:AiMoveDelayMs
+      - Battleship:AiDecisionBudgetMs
+    response_schema:
+      - difficulty: string
+      - result: string
+    response_errors:
+      - VALIDATION_FAILED
+      - INTERNAL
+    flow:
+      - S1: validate request.difficulty requires request.difficulty in {easy, medium, hard} producing ctx.difficulty on_failure VALIDATION S22
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: EARS-35
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: load config from appsettings producing ctx.config
+        side_effects: [read:config]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: compose session using session_state producing ctx.session ensures ctx.session.turn == human and ctx.session.difficulty == ctx.difficulty
+        side_effects: [mutate:ctx.session]
+        idempotent: yes
+        emits:
+          - game_started log at-most-once
+          - difficulty_selected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: resolve ctx.ai_strategy from ctx.difficulty using ai_strategy_easy or ai_strategy_medium or ai_strategy_hard producing ctx.ai_strategy ensures strategy is fixed for the session
+        side_effects: [mutate:ctx.ai_strategy]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S5: decide placement_mode as player from input_handler requires input in {manual, auto} producing ctx.placement_mode on_failure VALIDATION S5
+        side_effects: [read:input_handler]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: input not in {manual, auto}
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S6: compose own_board as player using fleet_placement from input_handler for_each fleet.ship sequential fail_fast ensures ships in bounds and non-overlapping on_failure VALIDATION S6
+        side_effects: [mutate:ctx.session.own_board]
+        idempotent: no
+        emits:
+          - fleet_placed log at-most-once
+        failures:
+          - VALIDATION_FAILED: EARS-13
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:delete ctx.session.own_board
+      - S7: compose ai_board using fleet_placement in automatic mode for_each fleet.ship sequential fail_fast ensures ships in bounds and non-overlapping on_failure INTERNAL S23
+        side_effects: [mutate:ctx.session.ai_board]
+        idempotent: no
+        emits: []
+        failures:
+          - INTERNAL: fleet_placement fails to produce a legal placement after bounded attempts
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:delete ctx.session.ai_board
+      - S8: invoke board_renderer to dom redacting ctx.session.ai_board.ship_cells producing ctx.display ensures difficulty badge shown
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S9: iterate ctx.session.turns sequential fail_fast awaiting game_over until ctx.session.winner != none
+        side_effects: [mutate:ctx.session]
+        idempotent: no
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:terminate ctx.session
+        substeps:
+          - S10: validate request.shot as player from input_handler requires ctx.session.turn == human and coordinate matches ^[A-J](10|[1-9])$ and untried in targeting_board producing ctx.shot on_failure VALIDATION S10
+            side_effects: [read:input_handler]
+            idempotent: yes
+            emits: []
+            failures:
+              - VALIDATION_FAILED: EARS-16
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S11: resolve ctx.shot using shot_resolver from ctx.session.ai_board producing ctx.outcome ensures outcome in {HIT, MISS, SUNK, GAME_OVER}
+            side_effects: [mutate:ctx.session.ai_board, mutate:ctx.session.targeting_board]
+            idempotent: no
+            emits:
+              - shot_fired log at-most-once
+              - shot_resolved log at-most-once
+              - ship_sunk log at-most-once
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: compensate:update ctx.session.targeting_board to previous value
+          - S12: decide ctx.session.winner when ctx.session.ai_board.remaining_cells == 0 producing ctx.session.winner on_success S13 otherwise S14
+            side_effects: [mutate:ctx.session.winner]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S13: terminate ctx.session.turns ensures ctx.session.winner != none
+            side_effects: [mutate:ctx.session.turn]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S14: decide ctx.ai_shot using ctx.ai_strategy from ctx.session.ai_view requires shot untried and in bounds producing ctx.ai_shot ensures ctx.ai_strategy reads no own_board ship coordinates on_failure INTERNAL S23
+            side_effects: [read:ctx.session.ai_view]
+            idempotent: yes
+            emits: []
+            failures:
+              - INTERNAL: strategy returns a tried or out-of-bounds coordinate or exceeds Battleship:AiDecisionBudgetMs
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:AiDecisionBudgetMs
+            compensation: none
+          - S15: resolve ctx.ai_shot using shot_resolver from ctx.session.own_board producing ctx.ai_outcome ensures outcome in {HIT, MISS, SUNK, GAME_OVER}
+            side_effects: [mutate:ctx.session.own_board, mutate:ctx.session.ai_view]
+            idempotent: no
+            emits:
+              - shot_fired log at-most-once
+              - shot_resolved log at-most-once
+              - ship_sunk log at-most-once
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: compensate:update ctx.session.ai_view to previous value
+          - S16: update ctx.session.ai_view from ctx.ai_outcome ensures unresolved hits of a ship reported SUNK are cleared and remaining ship sizes exclude it
+            side_effects: [mutate:ctx.session.ai_view]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S17: invoke board_renderer to dom redacting ctx.session.ai_board.ship_cells producing ctx.display
+            side_effects: [write:dom]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S18: decide ctx.session.winner when ctx.session.own_board.remaining_cells == 0 producing ctx.session.winner on_success S13 otherwise S10
+            side_effects: [mutate:ctx.session.winner]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+      - S19: record ctx.session.winner and ctx.difficulty to dom producing response.result ensures result names the winner and the difficulty played
+        side_effects: [write:dom]
+        idempotent: yes
+        emits:
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S20: release ctx.session using cleanup_handler finally S21
+        side_effects: [mutate:ctx.session]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S21: terminate page
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render single_player.game_over
+      - S22: invoke page_router to /single/medium replacing history entry
+        side_effects: [navigate]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: navigate /single/medium
+      - S23: record ctx.error to dom producing response.result
+        side_effects: [write:dom, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render single_player.error INTERNAL
+    cancel_boundary: forced on navigation away at any step; component DisposeAsync runs S20
+    uses_components:
+      - input_handler
+      - board_renderer
+      - board_engine
+      - fleet_placement
+      - shot_resolver
+      - ai_strategy_easy
+      - ai_strategy_medium
+      - ai_strategy_hard
+      - session_state
+      - page_router
+      - cleanup_handler
+      - app_logger
+    upstream_depends_on_entries:
+      - single_player_difficulty_select
+    cyclical_depends_on_entries: []
+    excludes:
+      - Any network I/O
+      - Save or resume of a game
+      - Changing difficulty during a game
+      - AI that reads hidden ship coordinates at any difficulty
+      - Non-standard fleet configurations or board sizes
+
+  - page: multiplayer_host
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+    trigger: navigate /host
+    result_channel: rendered page
+    delivery: none
+    cancellation: forced
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is single-instance per page component; exactly one room and one WebSocket per session (EARS-25).
+      - The WebSocket is opened at S4 with role host before the room code is shown at S5, so the host slot is filled before anyone can learn the code.
+      - Ordering is required per ctx.session.seq; every SHOT carries a strictly increasing seq and every RESULT must echo the pending seq (EARS-29).
+      - Durability is browser-memory-bound; boards, seq, and turn live only in ctx.session (EARS-31).
+      - Budget is Battleship:JoinTimeoutSeconds waiting for the client, Battleship:HandshakeTimeoutSeconds for HELLO, READY, and the game-over QUIT, and Battleship:ReadTimeoutSeconds per awaited peer message.
+      - The host takes the first combat turn after both READY messages (actor_flow host_multiplayer).
+      - CHAT may be sent from the chat box at any step from S12 to S24 through the S15 path without changing ctx.session.turn (EARS-30).
+      - All frames use shared_protocol and are decoded by protocol_codec into typed records; nothing received is evaluated (EARS-33).
+      - Server close codes before the handshake completes are mapped by shared_protocol.page_error_mapping (EARS-42).
+      - QUIT at game over follows shared_protocol.game_over_rule.
+      - Own unhit ship coordinates are never written to the socket (EARS-14).
+    request_schema: []
+    env_vars:
+      - Battleship:HttpTimeoutSeconds
+      - Battleship:JoinTimeoutSeconds
+      - Battleship:HandshakeTimeoutSeconds
+      - Battleship:ReadTimeoutSeconds
+    response_schema:
+      - roomCode: string
+      - result: string
+    response_errors:
+      - VALIDATION_FAILED
+      - RATE_LIMITED
+      - UPSTREAM_UNAVAILABLE
+      - INTERNAL
+    flow:
+      - S1: load config from appsettings producing ctx.config
+        side_effects: [read:config]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: compose session using session_state producing ctx.session ensures ctx.session.role == host and ctx.session.seq == 0 and ctx.session.turn == self
+        side_effects: [mutate:ctx.session]
+        idempotent: yes
+        emits:
+          - game_started log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: invoke room_api_client to POST /api/rooms producing ctx.session.room_code on_failure RATE_LIMITED S31 on_failure UNAVAILABLE S31
+        side_effects: [external:room_api_client]
+        idempotent: no
+        emits:
+          - room_created log at-most-once
+        failures:
+          - RATE_LIMITED: server responds 429
+          - UPSTREAM_UNAVAILABLE: server unreachable, Battleship:HttpTimeoutSeconds elapsed, or response 409 or 5xx
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HttpTimeoutSeconds
+        compensation: none
+      - S4: acquire connection to ws_transport at shared_protocol.connect_url with role host producing ctx.session.socket on_failure UNAVAILABLE S31
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - UPSTREAM_UNAVAILABLE: connect fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HttpTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S5: invoke board_renderer to dom producing ctx.display ensures room code and join link origin/join/{ctx.session.room_code} shown
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S6: await HELLO from ws_transport using recv_hello producing ctx.session.peer_version ensures peer_version == ProtocolInfo.Version on_failure VALIDATION S32 on_failure RATE_LIMITED S31 on_failure UNAVAILABLE S31 on_failure INTERNAL S33
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - peer_connected log at-most-once
+        failures:
+          - VALIDATION_FAILED: peer HELLO malformed or version mismatch
+          - RATE_LIMITED: server closed with 4029
+          - UPSTREAM_UNAVAILABLE: server closed with 4004, 4009, 4400, or 1001 before HELLO
+          - INTERNAL: Battleship:JoinTimeoutSeconds elapsed before HELLO
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:JoinTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S7: publish HELLO using protocol_codec to ws_transport producing ctx.sent_hello on_failure INTERNAL S33
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S8: decide placement_mode as multiplayer_host from input_handler requires input in {manual, auto} producing ctx.placement_mode on_failure VALIDATION S8
+        side_effects: [read:input_handler]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: input not in {manual, auto}
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S9: compose own_board as multiplayer_host using fleet_placement from input_handler for_each fleet.ship sequential fail_fast ensures ships in bounds and non-overlapping on_failure VALIDATION S9
+        side_effects: [mutate:ctx.session.own_board]
+        idempotent: no
+        emits:
+          - fleet_placed log at-most-once
+        failures:
+          - VALIDATION_FAILED: EARS-13
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:delete ctx.session.own_board
+      - S10: publish READY using protocol_codec to ws_transport on_failure INTERNAL S33
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S11: await READY from ws_transport using recv_ready producing ctx.session.peer_ready ensures ctx.session.peer_ready == true on_failure INTERNAL S33
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - INTERNAL: socket closed before READY
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S12: invoke board_renderer to dom producing ctx.display
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S13: iterate ctx.session.turns sequential fail_fast awaiting game_over until ctx.session.winner != none
+        side_effects: [mutate:ctx.session]
+        idempotent: no
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:publish QUIT using protocol_codec to ws_transport
+        substeps:
+          - S14: decide ctx.action as multiplayer_host from input_handler requires ctx.action in {chat, shot} when ctx.action == chat producing ctx.chat_out otherwise S16
+            side_effects: [read:input_handler]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S15: publish CHAT using protocol_codec to ws_transport using chat_sanitizer ensures text matches shared_protocol CHAT rules and ctx.session.turn unchanged on_success S14 on_failure INTERNAL S33
+            side_effects: [external:ws_transport]
+            idempotent: no
+            emits: []
+            failures:
+              - INTERNAL: send fails
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:release ctx.session.socket using cleanup_handler
+          - S16: validate request.shot as multiplayer_host from input_handler requires ctx.session.turn == self and coordinate matches ^[A-J](10|[1-9])$ and untried in targeting_board producing ctx.shot on_failure VALIDATION S14
+            side_effects: [read:input_handler]
+            idempotent: yes
+            emits: []
+            failures:
+              - VALIDATION_FAILED: EARS-16
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S17: update ctx.session.seq producing ctx.session.pending_seq ensures seq strictly increases
+            side_effects: [mutate:ctx.session.seq]
+            idempotent: no
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: compensate:update ctx.session.seq to previous value
+          - S18: publish SHOT using protocol_codec to ws_transport producing ctx.sent_shot on_failure INTERNAL S33
+            side_effects: [external:ws_transport]
+            idempotent: keyed:ctx.session.pending_seq
+            emits:
+              - shot_fired socket at-most-once
+            failures:
+              - INTERNAL: send fails
+            transaction: none
+            idempotency: idempotent_by ctx.session.pending_seq
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:release ctx.session.socket using cleanup_handler
+          - S19: await RESULT from ws_transport using recv_result producing ctx.outcome ensures result.seq == ctx.session.pending_seq on_failure VALIDATION S32 on_failure INTERNAL S33
+            side_effects: [external:ws_transport, mutate:ctx.session.targeting_board, mutate:ctx.session.turn]
+            idempotent: no
+            emits:
+              - shot_resolved log at-most-once
+              - ship_sunk log at-most-once
+            failures:
+              - VALIDATION_FAILED: EARS-29
+              - INTERNAL: socket closed or Battleship:ReadTimeoutSeconds elapsed before RESULT
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:update ctx.session.targeting_board to previous value
+          - S20: invoke board_renderer to dom producing ctx.display
+            side_effects: [write:dom]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S21: decide ctx.session.winner when ctx.outcome == GAME_OVER producing ctx.session.winner on_success S25 otherwise S22
+            side_effects: [mutate:ctx.session.winner]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S22: await SHOT from ws_transport using recv_shot producing ctx.peer_outcome ensures RESULT published with result.seq == shot.seq on_failure INTERNAL S33
+            side_effects: [external:ws_transport, mutate:ctx.session.own_board, mutate:ctx.session.turn]
+            idempotent: no
+            emits:
+              - shot_resolved log at-most-once
+              - ship_sunk log at-most-once
+            failures:
+              - INTERNAL: socket closed or Battleship:ReadTimeoutSeconds elapsed before SHOT
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:release ctx.session.socket using cleanup_handler
+          - S23: invoke board_renderer to dom producing ctx.display
+            side_effects: [write:dom]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S24: decide ctx.session.winner when ctx.peer_outcome == GAME_OVER producing ctx.session.winner on_success S25 otherwise S14
+            side_effects: [mutate:ctx.session.winner]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+      - S25: record ctx.session.winner to dom producing response.result
+        side_effects: [write:dom]
+        idempotent: yes
+        emits:
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S26: decide ctx.quit_sender when ctx.session.winner == self producing ctx.quit_sender on_success S27 otherwise S28
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S27: publish QUIT using protocol_codec to ws_transport on_success S29 on_failure INTERNAL S29
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - peer_disconnected log at-most-once
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+      - S28: await QUIT from ws_transport using recv_quit finally S29
+        side_effects: [external:ws_transport]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+      - S29: release ctx.session.socket using cleanup_handler ensures CloseAsync 1000 sent and ctx.session disposed finally S30
+        side_effects: [external:ws_transport, mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:record ctx.session.room_code to log
+      - S30: terminate page when ctx.error == none otherwise S34
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render multiplayer_host.game_over
+      - S31: record ctx.error to dom producing response.result
+        side_effects: [write:dom, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+        terminal: render multiplayer_host.error ctx.error
+      - S32: publish ERROR using protocol_codec to ws_transport redacting ctx.session.own_board on_success S29 on_failure INTERNAL S29
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - protocol_error socket at-most-once
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S33: release ctx.session.socket using cleanup_handler finally S34
+        side_effects: [external:ws_transport, mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+      - S34: record ctx.error to dom producing response.result
+        side_effects: [write:dom, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render multiplayer_host.error ctx.error
+    cancel_boundary: forced on navigation away or tab close at any step; component DisposeAsync publishes QUIT when possible then runs S29
+    uses_components:
+      - input_handler
+      - board_renderer
+      - board_engine
+      - fleet_placement
+      - shot_resolver
+      - session_state
+      - shared_protocol
+      - protocol_codec
+      - chat_sanitizer
+      - ws_transport
+      - room_api_client
+      - cleanup_handler
+      - app_logger
+    upstream_depends_on_entries:
+      - menu
+      - battleship_server.create_room
+      - battleship_server.room_connect
+      - battleship_server.relay_message
+    cyclical_depends_on_entries:
+      - recv_hello
+      - recv_ready
+      - recv_shot
+      - recv_result
+      - recv_chat
+      - recv_quit
+      - recv_error
+      - connection_lost
+    excludes:
+      - Peer authentication or identity
+      - More than one connected client
+      - Spectators
+      - Reconnection or resume after a dropped connection
+      - Peer-to-peer connections that bypass the server
+
+  - page: multiplayer_client
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_client
+    trigger: navigate /join/{roomCode}
+    result_channel: rendered page
+    delivery: none
+    cancellation: forced
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is single-instance per page component; exactly one WebSocket to one room per session (EARS-25).
+      - Ordering is required per ctx.session.seq; every RESULT must echo the pending seq and the client never fires before the host's first SHOT (EARS-29).
+      - The client sends HELLO first and the host answers, so the host learns the client has joined from HELLO alone.
+      - A room reporting 0 participants means the host has not connected yet and is retried, never joined (S4).
+      - Durability is browser-memory-bound; boards, seq, and turn live only in ctx.session (EARS-31).
+      - Budget is Battleship:HttpTimeoutSeconds per room check and connect, Battleship:HandshakeTimeoutSeconds for HELLO, READY, and the game-over QUIT, and Battleship:ReadTimeoutSeconds per awaited peer message.
+      - CHAT may be sent from the chat box at any step from S12 to S24 through the S18 path without changing ctx.session.turn (EARS-30).
+      - All frames use shared_protocol and are decoded by protocol_codec into typed records; nothing received is evaluated (EARS-33).
+      - Server close codes before the handshake completes are mapped by shared_protocol.page_error_mapping (EARS-42).
+      - QUIT at game over follows shared_protocol.game_over_rule.
+      - Own unhit ship coordinates are never written to the socket (EARS-14).
+    request_schema:
+      - roomCode: string
+    env_vars:
+      - Battleship:HttpTimeoutSeconds
+      - Battleship:HandshakeTimeoutSeconds
+      - Battleship:ReadTimeoutSeconds
+      - Battleship:JoinRetryCount
+      - Battleship:JoinRetryDelayMs
+    response_schema:
+      - result: string
+    response_errors:
+      - VALIDATION_FAILED
+      - NOT_FOUND
+      - CONFLICT
+      - RATE_LIMITED
+      - UPSTREAM_UNAVAILABLE
+      - INTERNAL
+    flow:
+      - S1: validate request.roomCode requires uppercased roomCode matches shared_protocol.room_code producing ctx.room_code on_failure VALIDATION S31
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: request.roomCode empty, wrong length, or outside the room code alphabet
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: load config from appsettings producing ctx.config
+        side_effects: [read:config]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: compose session using session_state producing ctx.session ensures ctx.session.role == client and ctx.session.seq == 0 and ctx.session.turn == peer
+        side_effects: [mutate:ctx.session]
+        idempotent: yes
+        emits:
+          - game_started log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: invoke room_api_client to GET /api/rooms/{ctx.room_code} requires participants == 1 producing ctx.room on_failure NOT_FOUND S32 on_failure CONFLICT S32 on_failure RATE_LIMITED S32 on_failure UNAVAILABLE S32
+        side_effects: [external:room_api_client]
+        idempotent: yes
+        emits: []
+        failures:
+          - NOT_FOUND: server responds 404, or participants is still 0 after Battleship:JoinRetryCount retries
+          - CONFLICT: participants == 2 (EARS-26)
+          - RATE_LIMITED: server responds 429
+          - UPSTREAM_UNAVAILABLE: server unreachable or Battleship:HttpTimeoutSeconds elapsed
+        transaction: none
+        idempotency: none
+        retry: up to Battleship:JoinRetryCount times every Battleship:JoinRetryDelayMs while participants == 0
+        timeout: Battleship:HttpTimeoutSeconds
+        compensation: none
+      - S5: acquire connection to ws_transport at shared_protocol.connect_url with role client producing ctx.session.socket on_failure UNAVAILABLE S32
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - UPSTREAM_UNAVAILABLE: connect fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HttpTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S6: publish HELLO using protocol_codec to ws_transport producing ctx.sent_hello on_failure NOT_FOUND S32 on_failure CONFLICT S32 on_failure RATE_LIMITED S32 on_failure INTERNAL S34
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - NOT_FOUND: server already closed with 4004
+          - CONFLICT: server already closed with 4009
+          - RATE_LIMITED: server already closed with 4029
+          - INTERNAL: send fails for any other reason
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S7: await HELLO from ws_transport using recv_hello producing ctx.session.peer_version ensures peer_version == ProtocolInfo.Version on_failure VALIDATION S33 on_failure NOT_FOUND S32 on_failure CONFLICT S32 on_failure RATE_LIMITED S32 on_failure INTERNAL S34
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - peer_connected log at-most-once
+        failures:
+          - VALIDATION_FAILED: peer HELLO malformed or version mismatch
+          - NOT_FOUND: server closed with 4004 (EARS-42)
+          - CONFLICT: server closed with 4009 (EARS-42)
+          - RATE_LIMITED: server closed with 4029 (EARS-42)
+          - INTERNAL: socket closed otherwise or Battleship:HandshakeTimeoutSeconds elapsed before HELLO
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S8: decide placement_mode as multiplayer_client from input_handler requires input in {manual, auto} producing ctx.placement_mode on_failure VALIDATION S8
+        side_effects: [read:input_handler]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: input not in {manual, auto}
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S9: compose own_board as multiplayer_client using fleet_placement from input_handler for_each fleet.ship sequential fail_fast ensures ships in bounds and non-overlapping on_failure VALIDATION S9
+        side_effects: [mutate:ctx.session.own_board]
+        idempotent: no
+        emits:
+          - fleet_placed log at-most-once
+        failures:
+          - VALIDATION_FAILED: EARS-13
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:delete ctx.session.own_board
+      - S10: publish READY using protocol_codec to ws_transport on_failure INTERNAL S34
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S11: await READY from ws_transport using recv_ready producing ctx.session.peer_ready ensures ctx.session.peer_ready == true on_failure INTERNAL S34
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits: []
+        failures:
+          - INTERNAL: socket closed before READY
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S12: invoke board_renderer to dom producing ctx.display
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S13: iterate ctx.session.turns sequential fail_fast awaiting game_over until ctx.session.winner != none
+        side_effects: [mutate:ctx.session]
+        idempotent: no
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:publish QUIT using protocol_codec to ws_transport
+        substeps:
+          - S14: await SHOT from ws_transport using recv_shot producing ctx.peer_outcome ensures RESULT published with result.seq == shot.seq on_failure INTERNAL S34
+            side_effects: [external:ws_transport, mutate:ctx.session.own_board, mutate:ctx.session.turn]
+            idempotent: no
+            emits:
+              - shot_resolved log at-most-once
+              - ship_sunk log at-most-once
+            failures:
+              - INTERNAL: socket closed or Battleship:ReadTimeoutSeconds elapsed before SHOT
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:release ctx.session.socket using cleanup_handler
+          - S15: invoke board_renderer to dom producing ctx.display
+            side_effects: [write:dom]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S16: decide ctx.session.winner when ctx.peer_outcome == GAME_OVER producing ctx.session.winner on_success S25 otherwise S17
+            side_effects: [mutate:ctx.session.winner]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S17: decide ctx.action as multiplayer_client from input_handler requires ctx.action in {chat, shot} when ctx.action == chat producing ctx.chat_out otherwise S19
+            side_effects: [read:input_handler]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S18: publish CHAT using protocol_codec to ws_transport using chat_sanitizer ensures text matches shared_protocol CHAT rules and ctx.session.turn unchanged on_success S17 on_failure INTERNAL S34
+            side_effects: [external:ws_transport]
+            idempotent: no
+            emits: []
+            failures:
+              - INTERNAL: send fails
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:release ctx.session.socket using cleanup_handler
+          - S19: validate request.shot as multiplayer_client from input_handler requires ctx.session.turn == self and coordinate matches ^[A-J](10|[1-9])$ and untried in targeting_board producing ctx.shot on_failure VALIDATION S17
+            side_effects: [read:input_handler]
+            idempotent: yes
+            emits: []
+            failures:
+              - VALIDATION_FAILED: EARS-16
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S20: update ctx.session.seq producing ctx.session.pending_seq ensures seq strictly increases
+            side_effects: [mutate:ctx.session.seq]
+            idempotent: no
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: compensate:update ctx.session.seq to previous value
+          - S21: publish SHOT using protocol_codec to ws_transport producing ctx.sent_shot on_failure INTERNAL S34
+            side_effects: [external:ws_transport]
+            idempotent: keyed:ctx.session.pending_seq
+            emits:
+              - shot_fired socket at-most-once
+            failures:
+              - INTERNAL: send fails
+            transaction: none
+            idempotency: idempotent_by ctx.session.pending_seq
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:release ctx.session.socket using cleanup_handler
+          - S22: await RESULT from ws_transport using recv_result producing ctx.outcome ensures result.seq == ctx.session.pending_seq on_failure VALIDATION S33 on_failure INTERNAL S34
+            side_effects: [external:ws_transport, mutate:ctx.session.targeting_board, mutate:ctx.session.turn]
+            idempotent: no
+            emits:
+              - shot_resolved log at-most-once
+              - ship_sunk log at-most-once
+            failures:
+              - VALIDATION_FAILED: EARS-29
+              - INTERNAL: socket closed or Battleship:ReadTimeoutSeconds elapsed before RESULT
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: Battleship:ReadTimeoutSeconds
+            compensation: compensate:update ctx.session.targeting_board to previous value
+          - S23: invoke board_renderer to dom producing ctx.display
+            side_effects: [write:dom]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+          - S24: decide ctx.session.winner when ctx.outcome == GAME_OVER producing ctx.session.winner on_success S25 otherwise S14
+            side_effects: [mutate:ctx.session.winner]
+            idempotent: yes
+            emits: []
+            failures: []
+            transaction: none
+            idempotency: none
+            retry: none
+            timeout: none
+            compensation: none
+      - S25: record ctx.session.winner to dom producing response.result
+        side_effects: [write:dom]
+        idempotent: yes
+        emits:
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S26: decide ctx.quit_sender when ctx.session.winner == self producing ctx.quit_sender on_success S27 otherwise S28
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S27: publish QUIT using protocol_codec to ws_transport on_success S29 on_failure INTERNAL S29
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - peer_disconnected log at-most-once
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+      - S28: await QUIT from ws_transport using recv_quit finally S29
+        side_effects: [external:ws_transport]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+      - S29: release ctx.session.socket using cleanup_handler ensures CloseAsync 1000 sent and ctx.session disposed finally S30
+        side_effects: [external:ws_transport, mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:record ctx.room_code to log
+      - S30: terminate page when ctx.error == none otherwise S35
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render multiplayer_client.game_over
+      - S31: record ctx.error to dom producing response.result
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render multiplayer_client.error VALIDATION_FAILED
+      - S32: record ctx.error to dom producing response.result
+        side_effects: [write:dom, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+        terminal: render multiplayer_client.error ctx.error
+      - S33: publish ERROR using protocol_codec to ws_transport redacting ctx.session.own_board on_success S29 on_failure INTERNAL S29
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - protocol_error socket at-most-once
+        failures:
+          - INTERNAL: send fails
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S34: release ctx.session.socket using cleanup_handler finally S35
+        side_effects: [external:ws_transport, mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+      - S35: record ctx.error to dom producing response.result
+        side_effects: [write:dom, write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render multiplayer_client.error ctx.error
+    cancel_boundary: forced on navigation away or tab close at any step; component DisposeAsync publishes QUIT when possible then runs S29
+    uses_components:
+      - input_handler
+      - board_renderer
+      - board_engine
+      - fleet_placement
+      - shot_resolver
+      - session_state
+      - shared_protocol
+      - protocol_codec
+      - chat_sanitizer
+      - ws_transport
+      - room_api_client
+      - cleanup_handler
+      - app_logger
+    upstream_depends_on_entries:
+      - menu
+      - battleship_server.get_room
+      - battleship_server.room_connect
+      - battleship_server.relay_message
+    cyclical_depends_on_entries:
+      - recv_hello
+      - recv_ready
+      - recv_shot
+      - recv_result
+      - recv_chat
+      - recv_quit
+      - recv_error
+      - connection_lost
+    excludes:
+      - Peer authentication or identity
+      - Public room discovery or matchmaking
+      - Reconnection or resume after a dropped connection
+      - Peer-to-peer connections that bypass the server
+
+  - page: help
+    auth:
+      - none
+    middleware: []
+    actors:
+      - player
+    trigger: navigate /help
+    result_channel: rendered page
+    delivery: none
+    cancellation: none
+    ack_point: n/a
+    runtime: async
+    invariants:
+      - Concurrency is single-instance per browser tab.
+      - Ordering is none.
+      - Durability is browser-memory-bound; nothing is stored.
+      - Budget is one render; the entry performs no network I/O.
+      - Difficulty descriptions match EARS-21, EARS-22, and EARS-23.
+    request_schema: []
+    env_vars: []
+    response_schema:
+      - usage: string
+    response_errors: []
+    flow:
+      - S1: compose usage using board_renderer producing response.usage ensures rules, controls, difficulty descriptions, and multiplayer instructions included
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: record response.usage to dom
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render help
+    cancel_boundary: none
+    uses_components:
+      - board_renderer
+    upstream_depends_on_entries:
+      - menu
+    cyclical_depends_on_entries: []
+    excludes:
+      - Interactive tutorials
+      - Localisation
+
+  - ws-message: recv_hello
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == HELLO
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 2
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket; the receive loop decodes one frame at a time.
+      - Ordering is required per ctx.session.socket; HELLO must be the first message received (EARS-28).
+      - Durability is browser-memory-bound; nothing is persisted beyond ctx.session.
+      - Budget is Battleship:HandshakeTimeoutSeconds, or Battleship:JoinTimeoutSeconds for the host.
+      - The frame is decoded by protocol_codec into the shared_protocol HELLO record with unknown properties rejected and is never evaluated (EARS-33).
+      - The server rejects a mismatched v before relay, so S2 is defence in depth for a stale cached app bundle.
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+    env_vars:
+      - Battleship:HandshakeTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol HELLO record producing ctx.peer_version on_failure VALIDATION S4
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame is not valid JSON or does not match the HELLO schema
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: decide ctx.version_ok when ctx.peer_version == ProtocolInfo.Version producing ctx.version_ok otherwise S4
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: ctx.peer_version != ProtocolInfo.Version
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: update ctx.session.peer_version ensures ctx.session.handshake == complete
+        side_effects: [mutate:ctx.session.peer_version]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+      - S4: publish ERROR using protocol_codec to ws_transport with code VERSION_MISMATCH producing response.message on_failure VALIDATION S5
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - protocol_error socket at-most-once
+        failures:
+          - VALIDATION_FAILED: send fails after invalid HELLO
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+      - S5: release ctx.session.socket using cleanup_handler ensures CloseAsync 1002 sent
+        side_effects: [external:ws_transport]
+        idempotent: keyed:ctx.session.socket
+        emits:
+          - peer_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+        terminal: close 1002
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - ws_transport
+      - session_state
+      - cleanup_handler
+    upstream_depends_on_entries:
+      - multiplayer_host
+      - multiplayer_client
+    cyclical_depends_on_entries: []
+    excludes:
+      - Version negotiation or downgrade
+      - Capability advertisement
+
+  - ws-message: recv_ready
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == READY
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 2
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket.
+      - Ordering is required per ctx.session.socket; READY is only valid after a completed HELLO exchange.
+      - Durability is browser-memory-bound.
+      - Budget is unbounded while the peer places ships; the page shows a waiting state.
+      - The frame is decoded into the shared_protocol READY record with unknown properties rejected and is never evaluated (EARS-33).
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+    env_vars:
+      - Battleship:HandshakeTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+      - CONFLICT
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol READY record and ctx.session.handshake == complete and ctx.session.peer_ready == false on_failure VALIDATION S3 on_failure PRECONDITION S3
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame does not match the READY schema
+          - CONFLICT: ctx.session.handshake != complete or ctx.session.peer_ready already true
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: update ctx.session.peer_ready ensures ctx.session.peer_ready == true
+        side_effects: [mutate:ctx.session.peer_ready]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+      - S3: publish ERROR using protocol_codec to ws_transport producing response.message on_failure VALIDATION S4
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - protocol_error socket at-most-once
+        failures:
+          - VALIDATION_FAILED: send fails after invalid READY
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+        terminal: send message one
+      - S4: release ctx.session.socket using cleanup_handler ensures CloseAsync 1002 sent
+        side_effects: [external:ws_transport]
+        idempotent: keyed:ctx.session.socket
+        emits:
+          - peer_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+        terminal: close 1002
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - ws_transport
+      - session_state
+      - cleanup_handler
+    upstream_depends_on_entries:
+      - recv_hello
+    cyclical_depends_on_entries: []
+    excludes:
+      - Un-ready or re-placement after READY
+
+  - ws-message: recv_shot
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == SHOT
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 4
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket; one SHOT is resolved before the next frame is decoded.
+      - Ordering is required per request.seq; seq must equal ctx.session.peer_last_seq + 1 (EARS-29).
+      - Durability is browser-memory-bound; own_board changes live only in ctx.session.
+      - Budget is Battleship:ReadTimeoutSeconds for the RESULT send.
+      - A SHOT received when ctx.session.turn != peer, out of bounds, or repeated is answered with ERROR and does not change the turn (EARS-15, EARS-16).
+      - The frame is decoded into the shared_protocol SHOT record and is never evaluated (EARS-33).
+      - RESULT follows the shared_protocol RESULT record and carries only seq, outcome, and the sunk ship name, never unhit own-ship coordinates (EARS-14).
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+      - seq: integer
+      - coord: string
+    env_vars:
+      - Battleship:ReadTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+      - CONFLICT
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol SHOT record producing request.seq on_failure VALIDATION S6
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame does not match the SHOT schema
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: validate request.seq requires ctx.session.turn == peer and request.seq == ctx.session.peer_last_seq + 1 and request.coord untried in ctx.session.own_board on_failure PRECONDITION S6
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - CONFLICT: EARS-16
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: resolve request.coord using shot_resolver from ctx.session.own_board producing ctx.outcome ensures outcome in {HIT, MISS, SUNK, GAME_OVER}
+        side_effects: [mutate:ctx.session.own_board, mutate:ctx.session.peer_last_seq]
+        idempotent: no
+        emits:
+          - shot_resolved log at-most-once
+          - ship_sunk log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: compensate:update ctx.session.own_board to previous value
+      - S4: publish RESULT using protocol_codec to ws_transport redacting ctx.session.own_board.unhit_cells producing response.message ensures message.seq == request.seq on_failure CONFLICT S8
+        side_effects: [external:ws_transport]
+        idempotent: keyed:request.seq
+        emits: []
+        failures:
+          - CONFLICT: send fails because the socket closed
+        transaction: none
+        idempotency: idempotent_by request.seq
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: compensate:update ctx.session.own_board to previous value
+      - S5: update ctx.session.turn to self when ctx.outcome != GAME_OVER producing ctx.session.turn otherwise S7
+        side_effects: [mutate:ctx.session.turn]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message one
+      - S6: publish ERROR using protocol_codec to ws_transport producing response.message ensures ctx.session.turn unchanged on_failure VALIDATION S8
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - protocol_error socket at-most-once
+        failures:
+          - VALIDATION_FAILED: send fails after invalid SHOT
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+        terminal: send message one
+      - S7: update ctx.session.winner to peer ensures ctx.session.winner == peer
+        side_effects: [mutate:ctx.session.winner]
+        idempotent: yes
+        emits:
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message one
+      - S8: release ctx.session.socket using cleanup_handler ensures socket disposed
+        side_effects: [external:ws_transport]
+        idempotent: keyed:ctx.session.socket
+        emits:
+          - peer_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: none
+        terminal: close 1011
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - ws_transport
+      - shot_resolver
+      - board_engine
+      - session_state
+      - cleanup_handler
+    upstream_depends_on_entries:
+      - recv_ready
+    cyclical_depends_on_entries:
+      - recv_result
+    excludes:
+      - Salvo or multi-shot variants
+      - Undo or retraction of a resolved shot
+
+  - ws-message: recv_result
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == RESULT
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 3
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket.
+      - Ordering is required per request.seq; seq must equal ctx.session.pending_seq or the message is rejected (EARS-29).
+      - Durability is browser-memory-bound; targeting_board lives only in ctx.session.
+      - Budget is Battleship:ReadTimeoutSeconds waiting for this message.
+      - A RESULT with the wrong seq, an unknown outcome, or no pending shot is answered with ERROR and does not change the turn.
+      - The frame is decoded into the shared_protocol RESULT record, including the ship rule for SUNK and GAME_OVER, and is never evaluated (EARS-33).
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+      - seq: integer
+      - outcome: string
+      - ship: string
+    env_vars:
+      - Battleship:ReadTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+      - CONFLICT
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol RESULT record producing request.seq on_failure VALIDATION S5
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame does not match the RESULT schema
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: validate request.seq requires ctx.session.pending_seq != none and request.seq == ctx.session.pending_seq on_failure PRECONDITION S5
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - CONFLICT: EARS-29
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: update ctx.session.targeting_board using board_engine producing ctx.session.targeting_board ensures pending shot marked with request.outcome and ctx.session.pending_seq == none
+        side_effects: [mutate:ctx.session.targeting_board, mutate:ctx.session.pending_seq]
+        idempotent: keyed:request.seq
+        emits:
+          - shot_resolved log at-most-once
+          - ship_sunk log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by request.seq
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: decide ctx.session.winner when request.outcome == GAME_OVER producing ctx.session.winner ensures winner == self otherwise S6
+        side_effects: [mutate:ctx.session.winner]
+        idempotent: yes
+        emits:
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+      - S5: publish ERROR using protocol_codec to ws_transport producing response.message ensures ctx.session.turn unchanged on_failure VALIDATION S7
+        side_effects: [external:ws_transport]
+        idempotent: no
+        emits:
+          - protocol_error socket at-most-once
+        failures:
+          - VALIDATION_FAILED: send fails after invalid RESULT
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: compensate:release ctx.session.socket using cleanup_handler
+        terminal: send message one
+      - S6: update ctx.session.turn to peer ensures turn alternates after the confirmed shot
+        side_effects: [mutate:ctx.session.turn]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+      - S7: release ctx.session.socket using cleanup_handler ensures socket disposed
+        side_effects: [external:ws_transport]
+        idempotent: keyed:ctx.session.socket
+        emits:
+          - peer_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:ReadTimeoutSeconds
+        compensation: none
+        terminal: close 1011
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - ws_transport
+      - board_engine
+      - session_state
+      - cleanup_handler
+    upstream_depends_on_entries:
+      - recv_ready
+    cyclical_depends_on_entries:
+      - recv_shot
+    excludes:
+      - Verification of the peer's honesty beyond schema and seq matching
+      - Replay of results after reconnection
+
+  - ws-message: recv_chat
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == CHAT
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 2
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket.
+      - Ordering is none; CHAT may arrive at any point after HELLO.
+      - Durability is browser-memory-bound; chat lives only in ctx.session.chat_log.
+      - Budget is one render; the entry performs no network send.
+      - CHAT never changes ctx.session.turn, seq, or any board (EARS-30).
+      - Text follows the shared_protocol CHAT record, is sanitised again by chat_sanitizer, and is rendered only as a Razor text node, never as MarkupString or innerHTML (EARS-33).
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+      - text: string
+    env_vars: []
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol CHAT record and ctx.session.handshake == complete producing request.text on_failure VALIDATION S4
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame does not match the CHAT schema
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: redact request.text using chat_sanitizer producing ctx.safe_text ensures no control or bidi override characters remain
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: record ctx.safe_text to dom using board_renderer as encoded text ensures ctx.session.turn unchanged
+        side_effects: [write:dom, mutate:ctx.session.chat_log]
+        idempotent: yes
+        emits:
+          - chat_received log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+      - S4: record ctx.error to log ensures ctx.session.turn unchanged
+        side_effects: [write:log]
+        idempotent: yes
+        emits:
+          - protocol_error log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - chat_sanitizer
+      - ws_transport
+      - board_renderer
+      - app_logger
+    upstream_depends_on_entries:
+      - recv_hello
+    cyclical_depends_on_entries: []
+    excludes:
+      - Chat history persistence
+      - Rich text, links, or emoji pickers
+      - Moderation beyond length and character filtering
+
+  - ws-message: recv_quit
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == QUIT
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 2
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket.
+      - Ordering is none; QUIT ends the session wherever it arrives.
+      - Durability is browser-memory-bound; the socket is closed and ctx.session disposed before the page settles (EARS-32).
+      - Budget is Battleship:HandshakeTimeoutSeconds for the close handshake.
+      - At game over this is how the loser learns the winner has finished (shared_protocol.game_over_rule); the declared winner is kept.
+      - If no winner was declared, the local side is shown as winner by forfeit.
+      - The frame is decoded into the shared_protocol QUIT record and never evaluated (EARS-33).
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+    env_vars:
+      - Battleship:HandshakeTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol QUIT record on_failure VALIDATION S4
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame does not match the QUIT schema
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: decide ctx.session.winner when ctx.session.winner == none producing ctx.session.winner ensures winner == self by forfeit otherwise S3
+        side_effects: [mutate:ctx.session.winner, write:dom]
+        idempotent: yes
+        emits:
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: release ctx.session.socket using cleanup_handler ensures CloseAsync 1000 sent and ctx.session disposed
+        side_effects: [external:ws_transport, mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits:
+          - peer_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+        terminal: close 1000
+      - S4: record ctx.error to log
+        side_effects: [write:log]
+        idempotent: yes
+        emits:
+          - protocol_error log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - ws_transport
+      - session_state
+      - cleanup_handler
+    upstream_depends_on_entries:
+      - recv_hello
+    cyclical_depends_on_entries: []
+    excludes:
+      - Rematch negotiation
+      - Graceful-quit acknowledgement handshake
+
+  - ws-message: recv_error
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: message.type == ERROR
+    result_channel: ws push
+    delivery: at-most-once
+    cancellation: forced
+    ack_point: after step 2
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket.
+      - Ordering is none; ERROR may arrive at any point and may originate from the peer or the server.
+      - Durability is browser-memory-bound; the error is shown in error_panel and written to the log only.
+      - Budget is Battleship:HandshakeTimeoutSeconds for release on fatal errors.
+      - Codes and their fatality follow shared_protocol.error_codes.
+      - An ERROR answering a rejected SHOT or RESULT leaves ctx.session.turn unchanged so the local player can retry (EARS-16).
+      - VERSION_MISMATCH tells the player to reload the page to get the current app.
+      - The frame is decoded into the shared_protocol ERROR record and never evaluated (EARS-33).
+    request_schema:
+      - message: json
+      - v: integer
+      - type: string
+      - code: string
+      - detail: string
+    env_vars:
+      - Battleship:HandshakeTimeoutSeconds
+    response_schema:
+      - message: json
+    response_errors:
+      - VALIDATION_FAILED
+    flow:
+      - S1: validate request.message using protocol_codec requires message decodes as the shared_protocol ERROR record producing request.code on_failure VALIDATION S5
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures:
+          - VALIDATION_FAILED: frame does not match the ERROR schema
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: record request.code and request.detail to dom using chat_sanitizer producing response.message
+        side_effects: [write:dom, write:log]
+        idempotent: yes
+        emits:
+          - protocol_error log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: decide ctx.fatal when request.code in {VERSION_MISMATCH, FATAL} or (ctx.session.handshake != complete and request.code != RATE_LIMITED) producing ctx.fatal otherwise S6
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: release ctx.session.socket using cleanup_handler ensures CloseAsync 1000 sent and ctx.session disposed
+        side_effects: [external:ws_transport, mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits:
+          - peer_disconnected log at-most-once
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: Battleship:HandshakeTimeoutSeconds
+        compensation: none
+        terminal: close 1000
+      - S5: record ctx.error to log
+        side_effects: [write:log]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+      - S6: update ctx.session.pending_seq to none when request.code in {VALIDATION, CONFLICT} ensures ctx.session.turn unchanged
+        side_effects: [mutate:ctx.session.pending_seq]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: send message none
+    cancel_boundary: forced on socket close at any step; cleanup_handler disposes the socket
+    uses_components:
+      - shared_protocol
+      - protocol_codec
+      - chat_sanitizer
+      - ws_transport
+      - cleanup_handler
+      - session_state
+    upstream_depends_on_entries:
+      - recv_hello
+    cyclical_depends_on_entries: []
+    excludes:
+      - Automatic recovery or retransmission after ERROR
+
+  - ws-close: connection_lost
+    auth:
+      - none
+    middleware: []
+    actors:
+      - multiplayer_host
+      - multiplayer_client
+    trigger: ctx.session.socket closed after ctx.session.handshake == complete without a prior QUIT
+    result_channel: rendered page
+    delivery: at-most-once
+    cancellation: none
+    ack_point: after step 1
+    runtime: serial
+    invariants:
+      - Concurrency is serial per ctx.session.socket; runs once per socket.
+      - Ordering is none; fires whenever the receive loop ends without QUIT after the handshake.
+      - Closes before the handshake completes are handled by the awaiting page step using shared_protocol.page_error_mapping, not here (EARS-42).
+      - Durability is browser-memory-bound; ctx.session is disposed (EARS-32).
+      - Budget is one render.
+      - Close code 4001 means the peer left and the local side wins by forfeit when no winner was declared; any other code ends the game with no winner (EARS-36).
+    request_schema:
+      - close_code: integer
+      - close_reason: string
+    env_vars: []
+    response_schema:
+      - result: string
+    response_errors: []
+    flow:
+      - S1: decide ctx.reason when request.close_code == 4001 producing ctx.reason ensures reason == peer_left otherwise S3
+        side_effects: [none]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S2: update ctx.session.winner to self when ctx.session.winner == none ensures winner == self by forfeit on_success S4
+        side_effects: [mutate:ctx.session.winner]
+        idempotent: yes
+        emits:
+          - peer_disconnected log at-most-once
+          - game_over log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S3: update ctx.reason to connection_lost ensures ctx.session.winner unchanged
+        side_effects: [mutate:ctx.reason]
+        idempotent: yes
+        emits:
+          - connection_lost log at-most-once
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+      - S4: release ctx.session using cleanup_handler ensures socket disposed and ctx.session cleared
+        side_effects: [mutate:ctx.session]
+        idempotent: keyed:ctx.session.socket
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: idempotent_by ctx.session.socket
+        retry: none
+        timeout: none
+        compensation: none
+      - S5: record ctx.reason and ctx.session.winner to dom producing response.result ensures return-to-menu action shown
+        side_effects: [write:dom]
+        idempotent: yes
+        emits: []
+        failures: []
+        transaction: none
+        idempotency: none
+        retry: none
+        timeout: none
+        compensation: none
+        terminal: render game_over ctx.reason
+    cancel_boundary: none
+    uses_components:
+      - ws_transport
+      - session_state
+      - board_renderer
+      - cleanup_handler
+      - app_logger
+    upstream_depends_on_entries:
+      - multiplayer_host
+      - multiplayer_client
+    cyclical_depends_on_entries: []
+    excludes:
+      - Automatic reconnection
+      - Resuming a game on a new socket

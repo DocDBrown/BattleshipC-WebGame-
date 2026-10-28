@@ -25,7 +25,22 @@ public static class BoardCoords
             return false;
         }
 
-        if (!int.TryParse(trimmed.AsSpan(1), out var number) || number is < 1 or > 10)
+        var numberText = trimmed.AsSpan(1);
+        int number;
+        if (numberText.Length == 1)
+        {
+            if (numberText[0] is < '1' or > '9')
+            {
+                return false;
+            }
+
+            number = numberText[0] - '0';
+        }
+        else if (numberText.Length == 2 && numberText[0] == '1' && numberText[1] == '0')
+        {
+            number = 10;
+        }
+        else
         {
             return false;
         }

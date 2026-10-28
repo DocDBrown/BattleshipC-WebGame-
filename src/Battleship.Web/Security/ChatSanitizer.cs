@@ -15,8 +15,25 @@ public static class ChatSanitizer
         }
 
         var builder = new StringBuilder(text.Length);
-        foreach (var ch in text)
+        for (var index = 0; index < text.Length; index++)
         {
+            var ch = text[index];
+            if (char.IsHighSurrogate(ch))
+            {
+                if (index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]))
+                {
+                    builder.Append(ch).Append(text[index + 1]);
+                    index++;
+                }
+
+                continue;
+            }
+
+            if (char.IsLowSurrogate(ch))
+            {
+                continue;
+            }
+
             if (char.IsControl(ch) || ProtocolInfo.IsBidiOverride(ch))
             {
                 continue;

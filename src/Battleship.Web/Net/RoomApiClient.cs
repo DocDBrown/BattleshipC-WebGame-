@@ -20,10 +20,17 @@ public sealed class RoomApiClient
             using var response = await _http.PostAsync("api/rooms", null, cancellationToken);
             if (response.StatusCode == HttpStatusCode.Created)
             {
-                var created = await response.Content.ReadFromJsonAsync<CreateRoomResponse>(cancellationToken: cancellationToken);
-                return created?.RoomCode is { Length: > 0 } code
-                    ? ApiResult<string>.Ok(code)
-                    : ApiResult<string>.Fail("INTERNAL", "The server returned an empty room code.");
+                try
+                {
+                    var created = await response.Content.ReadFromJsonAsync<CreateRoomResponse>(cancellationToken: cancellationToken);
+                    return created?.RoomCode is { Length: > 0 } code
+                        ? ApiResult<string>.Ok(code)
+                        : ApiResult<string>.Fail("INTERNAL", "The server returned an empty room code.");
+                }
+                catch (JsonException)
+                {
+                    return ApiResult<string>.Fail("INTERNAL", "The server returned an invalid response.");
+                }
             }
 
             var detail = await ReadDetailAsync(response, cancellationToken);
@@ -52,10 +59,17 @@ public sealed class RoomApiClient
             using var response = await _http.GetAsync($"api/rooms/{Uri.EscapeDataString(roomCode)}", cancellationToken);
             if (response.StatusCode == HttpStatusCode.OK)
             {
-                var state = await response.Content.ReadFromJsonAsync<RoomStateResponse>(cancellationToken: cancellationToken);
-                return state is null
-                    ? ApiResult<int>.Fail("INTERNAL", "The server returned an empty room state.")
-                    : ApiResult<int>.Ok(state.Participants);
+                try
+                {
+                    var state = await response.Content.ReadFromJsonAsync<RoomStateResponse>(cancellationToken: cancellationToken);
+                    return state is null
+                        ? ApiResult<int>.Fail("INTERNAL", "The server returned an empty room state.")
+                        : ApiResult<int>.Ok(state.Participants);
+                }
+                catch (JsonException)
+                {
+                    return ApiResult<int>.Fail("INTERNAL", "The server returned an invalid response.");
+                }
             }
 
             var detail = await ReadDetailAsync(response, cancellationToken);

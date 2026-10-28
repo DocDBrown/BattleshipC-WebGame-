@@ -3,9 +3,9 @@ using Battleship.Shared;
 
 namespace Battleship.Server.Rooms;
 
-public sealed class RoomCodeGenerator
+public class RoomCodeGenerator
 {
-    public string Generate()
+    public virtual string Generate()
     {
         Span<char> code = stackalloc char[ProtocolInfo.RoomCodeLength];
         var alphabet = ProtocolInfo.RoomCodeAlphabet;
