@@ -1,3 +1,4 @@
+// GameOptions.cs
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
 
@@ -14,6 +15,7 @@ public sealed class GameOptions
     public int ReadTimeoutSeconds { get; init; } = 60;
     public int JoinRetryCount { get; init; } = 20;
     public int JoinRetryDelayMs { get; init; } = 500;
+    public Uri? WebSocketOrigin { get; init; }
 
     public static GameOptions FromConfiguration(IConfiguration configuration)
     {
@@ -27,7 +29,8 @@ public sealed class GameOptions
             HandshakeTimeoutSeconds = Math.Max(1, Integer(configuration, "Battleship:HandshakeTimeoutSeconds", 15)),
             ReadTimeoutSeconds = Math.Max(1, Integer(configuration, "Battleship:ReadTimeoutSeconds", 60)),
             JoinRetryCount = Math.Max(0, Integer(configuration, "Battleship:JoinRetryCount", 20)),
-            JoinRetryDelayMs = Math.Max(0, Integer(configuration, "Battleship:JoinRetryDelayMs", 500))
+            JoinRetryDelayMs = Math.Max(0, Integer(configuration, "Battleship:JoinRetryDelayMs", 500)),
+            WebSocketOrigin = WebSocketUri(configuration, "Battleship:WebSocketBaseUrl")
         };
     }
 
@@ -39,5 +42,11 @@ public sealed class GameOptions
     private static int? NullableInt(IConfiguration configuration, string key) =>
         int.TryParse(configuration[key], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
             ? value
+            : null;
+
+    private static Uri? WebSocketUri(IConfiguration configuration, string key) =>
+        Uri.TryCreate(configuration[key], UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeWs || uri.Scheme == Uri.UriSchemeWss)
+            ? uri
             : null;
 }

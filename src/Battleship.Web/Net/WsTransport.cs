@@ -1,3 +1,4 @@
+// WsTransport.cs
 using System.Net.WebSockets;
 using System.Text;
 using Battleship.Shared;
@@ -9,8 +10,19 @@ public class WsTransport : IAsyncDisposable
     private static readonly ProtocolCodec Codec = new();
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
     private readonly SemaphoreSlim _sendLock = new(1, 1);
+    private readonly Uri? _origin;
     private ClientWebSocket? _socket;
     private int _disposed;
+
+    public WsTransport()
+        : this(null)
+    {
+    }
+
+    public WsTransport(Uri? origin)
+    {
+        _origin = origin;
+    }
 
     public ClientWebSocket Socket => _socket ?? throw new InvalidOperationException("The socket is not connected.");
 
@@ -23,12 +35,13 @@ public class WsTransport : IAsyncDisposable
             throw new InvalidOperationException("The transport is already connected.");
         }
 
+        var target = Resolve(uri);
         var socket = new ClientWebSocket();
         try
         {
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(timeout);
-            await socket.ConnectAsync(uri, timeoutSource.Token);
+            await socket.ConnectAsync(target, timeoutSource.Token);
             _socket = socket;
         }
         catch
@@ -117,7 +130,6 @@ public class WsTransport : IAsyncDisposable
         }
         catch
         {
-            // The socket is already closing.
         }
     }
 
@@ -146,7 +158,6 @@ public class WsTransport : IAsyncDisposable
             }
             catch
             {
-                // The socket is already closing.
             }
 
             socket.Dispose();
@@ -154,5 +165,21 @@ public class WsTransport : IAsyncDisposable
 
         _socket = null;
         _sendLock.Dispose();
+    }
+
+    private Uri Resolve(Uri uri)
+    {
+        if (_origin is null)
+        {
+            return uri;
+        }
+
+        var builder = new UriBuilder(uri)
+        {
+            Scheme = _origin.Scheme,
+            Host = _origin.Host,
+            Port = _origin.IsDefaultPort ? -1 : _origin.Port
+        };
+        return builder.Uri;
     }
 }

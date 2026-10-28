@@ -1,3 +1,4 @@
+// WebComposition.cs
 using Battleship.Web.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,6 @@ public static class WebComposition
             Timeout = TimeSpan.FromSeconds(options.HttpTimeoutSeconds)
         });
         services.AddScoped<RoomApiClient>();
-        services.AddTransient<WsTransport>();
+        services.AddTransient(_ => new WsTransport(options.WebSocketOrigin));
     }
 }
