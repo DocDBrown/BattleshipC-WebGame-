@@ -193,3 +193,11 @@ sunk ship type. Chat never changes the turn.
 - Tests are intentionally not included in this project.
 - The solution can be opened in Visual Studio, Rider, or VS Code with the C# Dev Kit.
 - `docker compose down` stops the container; no volumes or databases are used.
+
+## Validation
+
+```bash
+dotnet format Battleship.sln --verify-no-changes --no-restore
+dotnet build Battleship.sln -c Release -warnaserror --no-restore
+dotnet test Battleship.sln -c Release --no-build --no-restore
+```

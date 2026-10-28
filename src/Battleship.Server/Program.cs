@@ -1,3 +1,4 @@
+// Program.cs
 using Battleship.Server.Api;
 using Battleship.Server.Background;
 using Battleship.Server.Hosting;
@@ -86,7 +87,7 @@ app.MapGet("/api/rooms/{roomCode}", (HttpContext context) =>
     return app.Services.GetRequiredService<RoomApi>().GetAsync(context, roomCode);
 });
 
-app.MapGet("/ws/rooms/{roomCode}", (HttpContext context) =>
+app.Map("/ws/rooms/{roomCode}", (HttpContext context) =>
 {
     var roomCode = (string?)context.Request.RouteValues["roomCode"] ?? string.Empty;
     return app.Services.GetRequiredService<RoomSocketHandler>().HandleAsync(context, roomCode);
